@@ -97,25 +97,16 @@ def main():
         time_per_it = []
         if max_its is None:
             max_its = len(dataloaders['train'])
-        for epochs in range(max_eps):
-            for phase in ['train', 'test']:
+
+        # set models to train()
+        encoder.train()
+        decoder.train()
+        tblock.train()
+        discrim.train()
+        for epoch in range(max_eps):
                 if its > max_its:
                     break
-                if phase == 'train':
-                    # set models to train()
-                    encoder.train()
-                    decoder.train()
-                    tblock.train()
-                    discrim.train()
-                else:
-                    # set models to eval()
-                    encoder.eval()
-                    decoder.eval()
-                    tblock.eval()
-                    discrim.eval()
-                    image_id = 0
-
-                for images, style_images in dataloaders[phase]:
+                for images, style_images in dataloaders['train']:
                     t0 = process_time()
                     # utils.export_image(images[0, :, :, :], style_images[0, :, :, :], 'input_images.jpg')
                     if its > max_its:
@@ -127,93 +118,91 @@ def main():
                             style_images = style_images.cuda()
 
                     # autoencoder
+                    print(images.size(), style_images.size())
                     emb = encoder(images)
                     stylized_im = decoder(emb)
 
                     # if training do losses etc
-                    if phase == 'train':
-                        stylized_emb = encoder(stylized_im)
-                        # add losses
+                    stylized_emb = encoder(stylized_im)
+                    # add losses
 
-                        # tblock
-                        transformed_inputs, transformed_outputs = tblock(images, stylized_im)
-                        # add loss
+                    # tblock
+                    transformed_inputs, transformed_outputs = tblock(images, stylized_im)
+                    # add loss
 
-                        # Generator
-                        optimizer_gen.zero_grad()
-                        d_out_fake = discrim(stylized_im)
-                        g_loss = disc_wt * gen_loss(d_out_fake, 1)
-                        g_loss += trans_wt * transf_loss(transformed_inputs, transformed_outputs)
-                        g_loss += style_wt * style_aware_loss(emb, stylized_emb)
+                    # Generator
+                    optimizer_gen.zero_grad()
+                    d_out_fake = discrim(stylized_im)
+                    g_loss = disc_wt * gen_loss(d_out_fake, 1)
+                    g_loss += trans_wt * transf_loss(transformed_inputs, transformed_outputs)
+                    g_loss += style_wt * style_aware_loss(emb, stylized_emb)
 
-                        if dual_optim:
-                            g_loss.backward()
-                            optimizer_gen.step()
+                    if dual_optim:
+                        g_loss.backward()
+                        optimizer_gen.step()
 
-                        # discriminator
-                        optimizer_disc.zero_grad()
-                        d_out_real_ph = discrim(images)
-                        d_out_fake = discrim(stylized_im.detach())
-                        d_out_real_style = discrim(style_images)
+                    # discriminator
+                    optimizer_disc.zero_grad()
+                    d_out_real_ph = discrim(images)
+                    d_out_fake = discrim(stylized_im.detach())
+                    d_out_real_style = discrim(style_images)
 
-                        d_loss = 0
-                        for idx in range(len(d_out_real_ph)):
-                            inputs = [d_out_real_ph[idx], d_out_fake[idx], d_out_real_style[idx]]
-                            targets = [0, 0, 1]
-                            d_loss += disc_loss(inputs, targets)
-                        d_loss *= disc_wt
+                    d_loss = 0
+                    for idx in range(len(d_out_real_ph)):
+                        inputs = [d_out_real_ph[idx], d_out_fake[idx], d_out_real_style[idx]]
+                        targets = [0, 0, 1]
+                        d_loss += disc_loss(inputs, targets)
+                    d_loss *= disc_wt
 
-                        if dual_optim:
+                    if dual_optim:
+                        d_loss.backward()
+                        optimizer_disc.step()
+
+                    # accuracy given all the images
+                    d_acc_neg = utils.accuracy(d_out_real_ph, target_label=0) + utils.accuracy(d_out_fake, target_label=0)
+                    d_acc_pos = utils.accuracy(d_out_real_style, target_label=1)
+                    d_acc = (d_acc_neg + d_acc_pos) / 3
+                    d_acc_neg /= 2
+                    gen_acc = utils.accuracy(d_out_fake, target_label=1)  # accuracy given only the output image
+
+                    if not dual_optim:
+                        if discr_success_rate < win_rate:
                             d_loss.backward()
                             optimizer_disc.step()
+                            discr_success_rate = discr_success_rate * (1. - alpha) + alpha * d_acc
+                            d_steps += 1
+                        else:
+                            g_loss.backward()
+                            optimizer_gen.step()
+                            discr_success_rate = discr_success_rate * (1. - alpha) + alpha * (1. - gen_acc)
+                            g_steps += 1
 
-                        # accuracy given all the images
-                        d_acc_neg = utils.accuracy(d_out_real_ph, target_label=0) + utils.accuracy(d_out_fake, target_label=0)
-                        d_acc_pos = utils.accuracy(d_out_real_style, target_label=1)
-                        d_acc = (d_acc_neg + d_acc_pos) / 3
-                        d_acc_neg /= 2
-                        gen_acc = utils.accuracy(d_out_fake, target_label=1)  # accuracy given only the output image
+                    # print(g_loss.item(), g_steps, d_loss.item(), d_steps)
+                    t1 = process_time()
+                    time_per_it.append((t1-t0)/3600)
+                    if len(time_per_it) > 100:
+                        time_per_it.pop(0)
 
-                        if not dual_optim:
-                            if discr_success_rate < win_rate:
-                                d_loss.backward()
-                                optimizer_disc.step()
-                                discr_success_rate = discr_success_rate * (1. - alpha) + alpha * d_acc
-                                d_steps += 1
-                            else:
-                                g_loss.backward()
-                                optimizer_gen.step()
-                                discr_success_rate = discr_success_rate * (1. - alpha) + alpha * (1. - gen_acc)
-                                g_steps += 1
+                    if not its % log_interval:
+                        running_mean_it_time = sum(time_per_it)/len(time_per_it)
+                        time_rem = (max_its - its + 1) * running_mean_it_time
+                        print("{}/{} -- {} G Steps -- G Loss {:.4f} -- G Acc {:.2f} -"
+                              "- {} D Steps -- D Loss {:.4f} -- D Acc {:.2f} -"
+                              "- {:.2f} D Success Rate -- {:.1f} Hours Remaining".format(its, max_its, g_steps,
+                                                                                         g_loss.item(),  gen_acc,
+                                                                                         d_steps, d_loss, d_acc,
+                                                                                         discr_success_rate, time_rem))
 
-                        # print(g_loss.item(), g_steps, d_loss.item(), d_steps)
-                        t1 = process_time()
-                        time_per_it.append((t1-t0)/3600)
-                        if len(time_per_it) > 100:
-                            time_per_it.pop(0)
+                        for idx in range(images.size(0)):
+                            output_path = 'outputs/training/'.format(epoch)
+                            if not os.path.exists(output_path):
+                                os.makedirs(output_path)
 
-                        if not its % log_interval:
-                            running_mean_it_time = sum(time_per_it)/len(time_per_it)
-                            time_rem = (max_its - its + 1) * running_mean_it_time
-                            print("{}/{} -- {} G Steps -- G Loss {:.4f} -- G Acc {:.2f} -"
-                                  "- {} D Steps -- D Loss {:.4f} -- D Acc {:.2f} -"
-                                  "- {:.2f} D Success Rate -- {:.1f} Hours Remaining".format(its, max_its, g_steps,
-                                                                                             g_loss.item(),  gen_acc,
-                                                                                             d_steps, d_loss, d_acc,
-                                                                                             discr_success_rate, time_rem))
-
-                            for idx in range(images.size(0)):
-                                output_path = 'outputs/training/'.format(epochs)
-                                if not os.path.exists(output_path):
-                                    os.makedirs(output_path)
-
-                                output_path += 'iteration_{:06d}_example_{}.jpg'.format(its, idx)
-                                utils.export_image([images[idx, :, :, :], style_images[idx, :, :, :], stylized_im[idx, :, :, :]], output_path)
-                        its += 1
-                        scheduler_d.step()
-                        scheduler_g.step()
-                if phase == 'train':
-                    epochs += 1
+                            output_path += 'iteration_{:06d}_example_{}.jpg'.format(its, idx)
+                            utils.export_image([images[idx, :, :, :], style_images[idx, :, :, :], stylized_im[idx, :, :, :]], output_path)
+                    its += 1
+                    scheduler_d.step()
+                    scheduler_g.step()
 
         # only save if running on gpu (otherwise I'm just fixing bugs)
         torch.save(encoder, "encoder.pt")
