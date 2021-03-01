@@ -63,7 +63,8 @@ def main():
                 gen_params.append(param)
         optimizer_gen = torch.optim.Adam(gen_params, lr=lr)
 
-        glob_path = '../Datasets/Clipart-Watercolor-Comic/clipart/JPEGImages/*'
+        # glob_path =
+        glob_path = None
         style_data = datasets.StyleDataset(glob_path)
         num_workers = 8
         # if mpii:
