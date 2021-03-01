@@ -33,7 +33,7 @@ class PlacesDataset(data.Dataset):
         if train:
             self.transf = transforms.Compose([
                                               # transforms.RandomAffine(degrees=15, shear=0.05),
-                                              transforms.RandomCrop(input_size),
+                                              transforms.RandomCrop(crop_size),
                                               # transforms.RandomResizedCrop(crop_size, scale=(0.8, 1.2)), # ratio=(1., 1.)),
                                               transforms.ColorJitter(brightness=0.05, contrast=0.05, saturation=0.05, hue=0.05),
                                               transforms.RandomHorizontalFlip(), transforms.RandomVerticalFlip(),
