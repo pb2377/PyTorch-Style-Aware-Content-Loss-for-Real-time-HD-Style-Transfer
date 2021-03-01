@@ -83,22 +83,19 @@ class PlacesDataset(data.Dataset):
         return image
 
 
-class StyleDataset:
-    def __init__(self, glob_path='../Datasets/WikiArt-Sorted/data/vincent-van-gogh_road-with-cypresses-1890/*'):
+class StyleDataset(object):
+    def __init__(self, data_dir=None):
         # super(StyleDataset, self).__init__()
-        gpath = glob_path
-        while '*' in os.path.basename(gpath):
-            print(gpath)
-            gpath = os.path.dirname(gpath)
-        assert os.path.exists(os.path.dirname(gpath))
-        self.glob_path = glob_path
+        assert data_dir is not None
+        assert os.path.exists(data_dir)
+        self.data_dir = data_dir
         self.list_ids = None
         self.iter_ids = None
         self.get_list_ids()
         self.shuffle_ids()
 
     def get_list_ids(self):
-        list_ids = glob.glob(os.path.join(self.glob_path))
+        list_ids = glob.glob(os.path.join(self.data_dir, '*'))
         list_ids = [i for i in list_ids if '.jpg' in i or '.png' in i]
         self.list_ids = list_ids
 

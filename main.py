@@ -63,9 +63,8 @@ def main():
                 gen_params.append(param)
         optimizer_gen = torch.optim.Adam(gen_params, lr=lr)
 
-        # glob_path =
-        glob_path = None
-        style_data = datasets.StyleDataset(glob_path)
+        data_dir = '../Datasets/WikiArt-Sorted/data/vincent-van-gogh_road-with-cypresses-1890'
+        style_data = datasets.StyleDataset(data_dir)
         num_workers = 8
         # if mpii:
         #     dataloaders = {'train': DataLoader(datasets.MpiiDataset(train=True, input_size=input_size,
