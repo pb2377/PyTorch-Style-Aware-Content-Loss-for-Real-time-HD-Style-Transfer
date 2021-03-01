@@ -118,7 +118,7 @@ def main():
                             style_images = style_images.cuda()
 
                     # autoencoder
-                    print(images.size(), style_images.size())
+                    # print(images.size(), style_images.size())
                     emb = encoder(images)
                     stylized_im = decoder(emb)
 
