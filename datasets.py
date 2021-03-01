@@ -8,7 +8,7 @@ import json
 
 
 class PlacesDataset(data.Dataset):
-    def __init__(self, train=True, input_size=256, style_dataset=None, crop_size=None):
+    def __init__(self, train=True, input_size=256, style_dataset=None, crop_size=256):
         super(PlacesDataset, self).__init__()
         """Initialisation"""
         dataset_dir = '../Datasets/Places365/'
@@ -31,8 +31,6 @@ class PlacesDataset(data.Dataset):
         self.list_ids = self.get_list_ids()
 
         if train:
-            if crop_size is not None:
-                input_size = crop_size
             self.transf = transforms.Compose([
                                               # transforms.RandomAffine(degrees=15, shear=0.05),
                                               transforms.RandomCrop(input_size),

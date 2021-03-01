@@ -11,7 +11,7 @@ from time import process_time
 def main():
     train = True
     input_size = 768
-    crop_size = None  #set to none for default cropping
+    crop_size = 256  # set to none for default cropping
     dual_optim = False
     print("Training with Places365 Dataset")
     max_its = 3000000
