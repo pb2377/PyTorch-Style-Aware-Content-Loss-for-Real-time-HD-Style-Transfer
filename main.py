@@ -185,8 +185,7 @@ def main():
                             utils.export_image([images[idx, :, :, :], style_images[idx, :, :, :], stylized_im[idx, :, :, :]], output_path)
 
                     its += 1
-                    scheduler_d.step()
-                    scheduler_g.step()
+                    scheduler.step()
 
                     if not its % 10000:
                         if not os.path.exists('tmp'):
