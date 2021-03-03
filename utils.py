@@ -33,7 +33,7 @@ def export_image(images, output_path):
     for image in images:
         height = max(image.size(-2), height)
         width += image.size(-1)
-    # normalize to [0, 1]
+
     for idx, image in enumerate(images):
         images[idx] = (image + 1.) / 2.
 

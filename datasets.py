@@ -8,7 +8,7 @@ import json
 
 
 class PlacesDataset(data.Dataset):
-    def __init__(self, train=True, input_size=256, style_dataset=None, crop_size=256):
+    def __init__(self, train=True, input_size=768, style_dataset=None):
         super(PlacesDataset, self).__init__()
         """Initialisation"""
         dataset_dir = '../Datasets/Places365/'
@@ -33,7 +33,7 @@ class PlacesDataset(data.Dataset):
         if train:
             self.transf = transforms.Compose([
                                               # transforms.RandomAffine(degrees=15, shear=0.05),
-                                              transforms.RandomCrop(crop_size),
+                                              transforms.RandomCrop(input_size),
                                               # transforms.RandomResizedCrop(crop_size, scale=(0.8, 1.2)), # ratio=(1., 1.)),
                                               transforms.ColorJitter(brightness=0.05, contrast=0.05, saturation=0.05, hue=0.05),
                                               transforms.RandomHorizontalFlip(), transforms.RandomVerticalFlip(),
@@ -110,14 +110,13 @@ class StyleDataset(object):
 
 
 class TestDataset(data.Dataset):
-    def __init__(self,  style_dataset, input_size=768):
+    def __init__(self, image_dir='../Datasets/WikiArt-Sorted/data/sample_photographs'):
         super(TestDataset, self).__init__()
-        self.image_dir = '../Datasets/WikiArt-Sorted/data/sample_photographs'
+        self.image_dir = image_dir
         assert os.path.join(self.image_dir)
-        self.style_dataset = style_dataset
         self.list_ids = None
         self.get_list_ids()
-        self.transf = transforms.Compose([transforms.Resize(input_size),
+        self.transf = transforms.Compose([#transforms.Resize(input_size),
                                           # transforms.CenterCrop(input_size),
                                           transforms.ToTensor(),
                                           ])
@@ -131,11 +130,15 @@ class TestDataset(data.Dataset):
         return len(self.list_ids)
 
     def __getitem__(self, idx):
-        style_image = self.style_dataset.iterate()
         image = Image.open(self.list_ids[idx])
-        style_image = self.transf(style_image)
-        image = self.transf(image)
-        return image, style_image
+        image = self.normalize(self.transf(image))
+        return image
+
+    @staticmethod
+    def normalize(image):
+        image *= 2.
+        image -= 1.
+        return image
 
 
 class MpiiDataset(data.Dataset):

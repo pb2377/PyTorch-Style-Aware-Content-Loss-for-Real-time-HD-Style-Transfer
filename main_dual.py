@@ -12,8 +12,8 @@ def main():
     train = False
     input_size = 768
     # crop_size = 256  # set to none for default cropping
-    dual_optim = False
-    print("Training with Places365 Dataset")
+
+    print("Training with Places365 Dataset -- Dual optimisation of G and D")
     max_its = 1
     max_eps = 10000
     optimizer = 'adam'  # separate optimizers for discriminator and autoencoder
@@ -56,12 +56,12 @@ def main():
         style_aware_loss = losses.StyleAwareContentLoss()
 
         # optimizer for encoder/decoder (and tblock? - think it has no parameters though)
-        gen_params = []
-        for m in [encoder, decoder, tblock]:
+        params_to_update = []
+        for m in [encoder, decoder, tblock, discrim]:
             for param in m.parameters():
                 param.requires_grad = True
-                gen_params.append(param)
-        optimizer_gen = torch.optim.Adam(gen_params, lr=lr)
+                params_to_update.append(param)
+        optimizer = torch.optim.Adam(params_to_update, lr=lr)
 
         data_dir = '../Datasets/WikiArt-Sorted/data/vincent-van-gogh_road-with-cypresses-1890'
         style_data = datasets.StyleDataset(data_dir)
@@ -79,15 +79,15 @@ def main():
                        'test': DataLoader(datasets.TestDataset(),
                                           batch_size=1, shuffle=False, num_workers=num_workers)}
 
-        # optimizer for disciminator
-        disc_params = []
-        for param in discrim.parameters():
-            param.requires_grad = True
-            disc_params.append(param)
-        optimizer_disc = torch.optim.Adam(disc_params, lr=lr)
+        # # optimizer for disciminator
+        # disc_params = []
+        # for param in discrim.parameters():
+        #     param.requires_grad = True
+        #     disc_params.append(param)
+        # optimizer_disc = torch.optim.Adam(disc_params, lr=lr)
 
-        scheduler_g = torch.optim.lr_scheduler.StepLR(optimizer_gen, step_lr_step, gamma=step_lr_gamma, last_epoch=-1)
-        scheduler_d = torch.optim.lr_scheduler.StepLR(optimizer_disc, step_lr_step, gamma=step_lr_gamma, last_epoch=-1)
+        scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_lr_step, gamma=step_lr_gamma, last_epoch=-1)
+        # scheduler_d = torch.optim.lr_scheduler.StepLR(optimizer_disc, step_lr_step, gamma=step_lr_gamma, last_epoch=-1)
 
         its = 0
         print('Begin Training:')
@@ -107,6 +107,8 @@ def main():
                 if its > max_its:
                     break
                 for images, style_images in dataloaders['train']:
+                    optimizer.zero_grad()
+
                     t0 = process_time()
                     # utils.export_image(images[0, :, :, :], style_images[0, :, :, :], 'input_images.jpg')
                     if its > max_its:
@@ -131,18 +133,12 @@ def main():
                     # add loss
 
                     # Generator
-                    optimizer_gen.zero_grad()
                     d_out_fake = discrim(stylized_im)
                     g_loss = disc_wt * gen_loss(d_out_fake, 1)
                     g_loss += trans_wt * transf_loss(transformed_inputs, transformed_outputs)
                     g_loss += style_wt * style_aware_loss(emb, stylized_emb)
 
-                    if dual_optim:
-                        g_loss.backward()
-                        optimizer_gen.step()
-
                     # discriminator
-                    optimizer_disc.zero_grad()
                     d_out_real_ph = discrim(images)
                     d_out_fake = discrim(stylized_im.clone().detach())
                     d_out_real_style = discrim(style_images)
@@ -154,10 +150,6 @@ def main():
                         d_loss += disc_loss(inputs, targets)
                     d_loss *= disc_wt
 
-                    if dual_optim:
-                        d_loss.backward()
-                        optimizer_disc.step()
-
                     # accuracy given all the images
                     d_acc_neg = utils.accuracy(d_out_real_ph, target_label=0) + utils.accuracy(d_out_fake, target_label=0)
                     d_acc_pos = utils.accuracy(d_out_real_style, target_label=1)
@@ -165,18 +157,10 @@ def main():
                     d_acc_neg /= 2
                     gen_acc = utils.accuracy(d_out_fake, target_label=1)  # accuracy given only the output image
 
-                    if not dual_optim:
-                        if discr_success_rate < win_rate:
-                            d_loss.backward()
-                            optimizer_disc.step()
-                            discr_success_rate = discr_success_rate * (1. - alpha) + alpha * d_acc
-                            d_steps += 1
-                        else:
-                            g_loss.backward()
-                            optimizer_gen.step()
-                            discr_success_rate = discr_success_rate * (1. - alpha) + alpha * (1. - gen_acc)
-                            g_steps += 1
 
+                    loss = g_loss + d_loss
+                    loss.backward()
+                    optimizer.step()
                     # print(g_loss.item(), g_steps, d_loss.item(), d_steps)
                     t1 = process_time()
                     time_per_it.append((t1-t0)/3600)
@@ -200,10 +184,8 @@ def main():
 
                             output_path += 'iteration_{:06d}_example_{}.jpg'.format(its, idx)
                             utils.export_image([images[idx, :, :, :], style_images[idx, :, :, :], stylized_im[idx, :, :, :]], output_path)
-
                     its += 1
-                    scheduler_d.step()
-                    scheduler_g.step()
+                    scheduler.step()
 
                     if not its % 10000:
                         if not os.path.exists('tmp'):
