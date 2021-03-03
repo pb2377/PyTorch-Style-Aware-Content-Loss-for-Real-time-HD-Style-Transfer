@@ -9,12 +9,12 @@ from time import process_time
 
 
 def main():
-    train = False
+    train = True
     input_size = 768
     # crop_size = 256  # set to none for default cropping
 
     print("Training with Places365 Dataset -- Dual optimisation of G and D")
-    max_its = 1
+    max_its = 150000
     max_eps = 10000
     optimizer = 'adam'  # separate optimizers for discriminator and autoencoder
     lr = 0.001

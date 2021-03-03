@@ -9,7 +9,7 @@ from time import process_time
 
 
 def main():
-    train = False
+    train = True
     input_size = 768
     # crop_size = 256  # set to none for default cropping
     dual_optim = False
