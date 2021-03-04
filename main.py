@@ -55,7 +55,7 @@ def main():
             encoder = torch.load("tmp/encoder.pt", map_location=device)
             decoder = torch.load("tmp/decoder.pt", map_location=device)
             tblock = torch.load("tmp/tblock.pt", map_location=device)
-            discrim = torch.loda("tmp/discriminator.pt", map_location=device)
+            discrim = torch.load("tmp/discriminator.pt", map_location=device)
 
         # Losses
         gen_loss = losses.GeneratorLoss()
