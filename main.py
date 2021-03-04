@@ -176,7 +176,7 @@ def main():
                         # generator train step
                         # Generator
                         g_loss = disc_wt * gen_loss(d_out_fake, 1)
-                        g_loss += trans_wt * transf_loss(§transformed_inputs, transformed_outputs)
+                        g_loss += trans_wt * transf_loss(transformed_inputs, transformed_outputs)
                         g_loss += style_wt * style_aware_loss(emb, stylized_emb)
                         g_loss.backward()
                         d_optimizer.step()
