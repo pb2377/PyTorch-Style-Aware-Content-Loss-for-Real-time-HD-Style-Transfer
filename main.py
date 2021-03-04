@@ -195,7 +195,7 @@ def main():
                         print("{}/{} -- {} G Steps -- G Loss {:.4f} -- G Acc {:.2f} -"
                               "- {} D Steps -- D Loss {:.4f} -- D Acc {:.2f} -"
                               "- {:.2f} D Success Rate -- {:.1f} Hours Remaining".format(its, max_its, g_steps,
-                                                                                         g_loss.item(),  gen_acc,
+                                                                                         g_loss,  gen_acc,
                                                                                          d_steps, d_loss, d_acc,
                                                                                          discr_success_rate, time_rem))
 
