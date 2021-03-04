@@ -17,7 +17,7 @@ def main():
     max_its = 300000
     max_eps = 10000
     optimizer = 'adam'  # separate optimizers for discriminator and autoencoder
-    lr = 0.001
+    lr = 0.01
     batch_size = 1
     step_lr_gamma = 0.1
     step_lr_step = 200000
@@ -111,6 +111,8 @@ def main():
         decoder.train()
         tblock.train()
         discrim.train()
+        d_loss = 0
+        g_loss = 0
         for epoch in range(max_eps):
                 if its > max_its:
                     break
@@ -155,8 +157,6 @@ def main():
                     d_acc_neg /= 2
                     gen_acc = utils.accuracy(d_out_fake, target_label=1)  # accuracy given only the output image
 
-                    d_loss = 0
-                    g_loss = 0
                     if discr_success_rate < win_rate:
                         # discriminator train step
                         d_out_fake = discrim(stylized_im.clone().detach())
@@ -192,9 +192,9 @@ def main():
                     if not its % log_interval:
                         running_mean_it_time = sum(time_per_it)/len(time_per_it)
                         time_rem = (max_its - its + 1) * running_mean_it_time
-                        print("{}/{} -- {} G Steps -- G Loss {:.4f} -- G Acc {:.2f} -"
-                              "- {} D Steps -- D Loss {:.4f} -- D Acc {:.2f} -"
-                              "- {:.2f} D Success Rate -- {:.1f} Hours Remaining".format(its, max_its, g_steps,
+                        print("{}/{} -- {} G Steps -- G Loss {:.2f} -- G Acc {:.2f} -"
+                              "- {} D Steps -- D Loss {:.2f} -- D Acc {:.2f} -"
+                              "- {:.2f} D Success -- {:.1f} Hours remaing...".format(its, max_its, g_steps,
                                                                                          g_loss,  gen_acc,
                                                                                          d_steps, d_loss, d_acc,
                                                                                          discr_success_rate, time_rem))
