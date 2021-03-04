@@ -49,6 +49,14 @@ def main():
         discrim = discrim.cuda()
 
     if train:
+        # load tmp weights
+        if os.path.exists('tmp'):
+            device = 'cuda' if torch.cuda.is_available() else 'cpu'
+            encoder = torch.load("tmp/encoder.pt", map_location=device)
+            decoder = torch.load("tmp/decoder.pt", map_location=device)
+            tblock = torch.load("tmp/tblock.pt", map_location=device)
+            discrim = torch.loda("tmp/discriminator.pt", map_location=device)
+
         # Losses
         gen_loss = losses.GeneratorLoss()
         disc_loss = losses.DiscriminatorLoss()
@@ -111,6 +119,7 @@ def main():
         decoder.train()
         tblock.train()
         discrim.train()
+
         d_loss = 0
         g_loss = 0
         gen_acc = 0
