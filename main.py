@@ -17,7 +17,7 @@ def main():
     max_its = 300000
     max_eps = 10000
     optimizer = 'adam'  # separate optimizers for discriminator and autoencoder
-    lr = 0.001
+    lr = 0.0002
     batch_size = 1
     step_lr_gamma = 0.1
     step_lr_step = 200000
