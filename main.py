@@ -15,7 +15,7 @@ def main():
     dual_optim = False
     print("Training with Places365 Dataset")
     max_its = 300000
-    max_eps = 10000
+    max_eps = 20000
     optimizer = 'adam'  # separate optimizers for discriminator and autoencoder
     lr = 0.0002
     batch_size = 1
@@ -23,7 +23,7 @@ def main():
     step_lr_step = 200000
     discr_success_rate = 0.8
     win_rate = 0.8
-    log_interval = int(max_its // 100)
+    log_interval = int(max_its // 50)
     # log_interval = 2
     if log_interval < 10:
        print("\n WARNING: VERY SMALL LOG INTERVAL\n")
@@ -169,9 +169,7 @@ def main():
 
                         d_loss.backward()
                         d_optimizer.step()
-                        old_d = discr_success_rate
                         discr_success_rate = discr_success_rate * (1. - alpha) + alpha * d_acc
-                        print(old_d, discr_success_rate, d_acc)
                         d_steps += 1
                     else:
                         # generator train step
@@ -189,9 +187,7 @@ def main():
                         g_loss += style_wt * style_aware_loss(emb, stylized_emb)
                         g_loss.backward()
                         d_optimizer.step()
-                        old_d = discr_success_rate
                         discr_success_rate = discr_success_rate * (1. - alpha) + alpha * (1. - gen_acc)
-                        print(old_d, discr_success_rate, 1-gen_acc)
                         g_steps += 1
 
                     # print(g_loss.item(), g_steps, d_loss.item(), d_steps)
