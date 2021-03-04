@@ -55,13 +55,13 @@ def main():
         transf_loss = losses.TransformedLoss()
         style_aware_loss = losses.StyleAwareContentLoss()
 
-        # optimizer for encoder/decoder (and tblock? - think it has no parameters though)
-        params_to_update = []
-        for m in [encoder, decoder, tblock, discrim]:
-            for param in m.parameters():
-                param.requires_grad = True
-                params_to_update.append(param)
-        # optimizer = torch.optim.Adam(params_to_update, lr=lr)
+        # # optimizer for encoder/decoder (and tblock? - think it has no parameters though)
+        # params_to_update = []
+        # for m in [encoder, decoder, tblock, discrim]:
+        #     for param in m.parameters():
+        #         param.requires_grad = True
+        #         params_to_update.append(param)
+        # # optimizer = torch.optim.Adam(params_to_update, lr=lr)
 
         data_dir = '../Datasets/WikiArt-Sorted/data/vincent-van-gogh_road-with-cypresses-1890'
         style_data = datasets.StyleDataset(data_dir)
@@ -159,7 +159,7 @@ def main():
 
                     if discr_success_rate < win_rate:
                         # discriminator train step
-                        d_out_fake = discrim(stylized_im.clone().detach())
+                        # d_out_fake = discrim(stylized_im.clone().detach())
                         # detach from generator, so not propagating unnecessary gradients
 
                         for idx in range(len(d_out_real_ph)):
@@ -176,7 +176,7 @@ def main():
                         # generator train step
                         # Generator
                         g_loss = disc_wt * gen_loss(d_out_fake, 1)
-                        g_loss += trans_wt * transf_loss(transformed_inputs, transformed_outputs)
+                        g_loss += trans_wt * transf_loss(§transformed_inputs, transformed_outputs)
                         g_loss += style_wt * style_aware_loss(emb, stylized_emb)
                         g_loss.backward()
                         d_optimizer.step()
