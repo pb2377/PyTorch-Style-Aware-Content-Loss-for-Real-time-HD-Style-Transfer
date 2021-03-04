@@ -17,7 +17,7 @@ def main():
     max_its = 300000
     max_eps = 10000
     optimizer = 'adam'  # separate optimizers for discriminator and autoencoder
-    lr = 0.01
+    lr = 0.0002
     batch_size = 1
     step_lr_gamma = 0.1
     step_lr_step = 200000
@@ -61,7 +61,7 @@ def main():
             for param in m.parameters():
                 param.requires_grad = True
                 params_to_update.append(param)
-        optimizer = torch.optim.Adam(params_to_update, lr=lr)
+        # optimizer = torch.optim.Adam(params_to_update, lr=lr)
 
         data_dir = '../Datasets/WikiArt-Sorted/data/vincent-van-gogh_road-with-cypresses-1890'
         style_data = datasets.StyleDataset(data_dir)
@@ -169,7 +169,7 @@ def main():
                         d_loss *= disc_wt
 
                         d_loss.backward()
-                        optimizer.step()
+                        d_optimizer.step()
                         discr_success_rate = discr_success_rate * (1. - alpha) + alpha * d_acc
                         d_steps += 1
                     else:
@@ -179,7 +179,7 @@ def main():
                         g_loss += trans_wt * transf_loss(transformed_inputs, transformed_outputs)
                         g_loss += style_wt * style_aware_loss(emb, stylized_emb)
                         g_loss.backward()
-                        optimizer.step()
+                        d_optimizer.step()
                         discr_success_rate = discr_success_rate * (1. - alpha) + alpha * (1. - gen_acc)
                         g_steps += 1
 
