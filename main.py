@@ -24,9 +24,9 @@ def main():
     discr_success_rate = 0.8
     win_rate = 0.8
     log_interval = int(max_its // 20)
-    # log_interval = 2
-    if log_interval < 10:
-       print("\n WARNING: VERY SMALL LOG INTERVAL\n")
+    log_interval = 2
+    # if log_interval < 10:
+    #    print("\n WARNING: VERY SMALL LOG INTERVAL\n")
     #
     lam = 0.001
     disc_wt = 1.
@@ -79,8 +79,23 @@ def main():
                        'test': DataLoader(datasets.TestDataset(),
                                           batch_size=1, shuffle=False, num_workers=num_workers)}
 
+        # optimizer for encoder/decoder (and tblock? - think it has no parameters though)
+        gen_params = []
+        for m in [encoder, decoder, tblock]:
+            for param in m.parameters():
+                param.requires_grad = True
+                gen_params.append(param)
+        g_optimizer = torch.optim.Adam(gen_params, lr=lr)
 
-        scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_lr_step, gamma=step_lr_gamma, last_epoch=-1)
+        # optimizer for disciminator
+        disc_params = []
+        for param in discrim.parameters():
+            param.requires_grad = True
+            disc_params.append(param)
+        d_optimizer = torch.optim.Adam(disc_params, lr=lr)
+
+        scheduler_g = torch.optim.lr_scheduler.StepLR(g_optimizer, step_lr_step, gamma=step_lr_gamma, last_epoch=-1)
+        scheduler_d = torch.optim.lr_scheduler.StepLR(d_optimizer, step_lr_step, gamma=step_lr_gamma, last_epoch=-1)
 
         its = 0
         print('Begin Training:')
@@ -102,16 +117,20 @@ def main():
                 for images, style_images in dataloaders['train']:
                     t0 = process_time()
                     # utils.export_image(images[0, :, :, :], style_images[0, :, :, :], 'input_images.jpg')
+
+                    # zero gradients
+                    g_optimizer.zero_grad()
+                    d_optimizer.zero_grad()
+
                     if its > max_its:
                         break
-                    # raise NotImplementedError
+
                     if torch.cuda.is_available():
                         images = images.cuda()
                         if style_images is not None:
                             style_images = style_images.cuda()
 
                     # autoencoder
-                    # print(images.size(), style_images.size())
                     emb = encoder(images)
                     stylized_im = decoder(emb)
 
@@ -123,38 +142,41 @@ def main():
                     transformed_inputs, transformed_outputs = tblock(images, stylized_im)
                     # add loss
 
-                    # Generator
-                    optimizer.zero_grad()
-                    d_out_fake = discrim(stylized_im)
-                    g_loss = disc_wt * gen_loss(d_out_fake, 1)
-                    g_loss += trans_wt * transf_loss(transformed_inputs, transformed_outputs)
-                    g_loss += style_wt * style_aware_loss(emb, stylized_emb)
-
-                    # discriminator
-                    d_out_real_ph = discrim(images)
-                    d_out_fake = discrim(stylized_im.clone().detach())
-                    d_out_real_style = discrim(style_images)
-
-                    d_loss = 0
-                    for idx in range(len(d_out_real_ph)):
-                        inputs = [d_out_real_ph[idx], d_out_fake[idx], d_out_real_style[idx]]
-                        targets = [0, 0, 1]
-                        d_loss += disc_loss(inputs, targets)
-                    d_loss *= disc_wt
-
                     # accuracy given all the images
-                    d_acc_neg = utils.accuracy(d_out_real_ph, target_label=0) + utils.accuracy(d_out_fake, target_label=0)
+                    d_acc_neg = utils.accuracy(d_out_real_ph, target_label=0) + utils.accuracy(d_out_fake,
+                                                                                               target_label=0)
                     d_acc_pos = utils.accuracy(d_out_real_style, target_label=1)
                     d_acc = (d_acc_neg + d_acc_pos) / 3
                     d_acc_neg /= 2
                     gen_acc = utils.accuracy(d_out_fake, target_label=1)  # accuracy given only the output image
 
+                    d_loss = 0
+                    g_loss = 0
                     if discr_success_rate < win_rate:
+                        # discriminator train step
+                        d_out_real_ph = discrim(images)
+                        d_out_fake = discrim(stylized_im.clone().detach())
+                        # detach from generator, so not propagating unnecessary gradients
+                        d_out_real_style = discrim(style_images)
+
+                        for idx in range(len(d_out_real_ph)):
+                            inputs = [d_out_real_ph[idx], d_out_fake[idx], d_out_real_style[idx]]
+                            targets = [0, 0, 1]
+                            d_loss += disc_loss(inputs, targets)
+                        d_loss *= disc_wt
+
                         d_loss.backward()
                         optimizer.step()
                         discr_success_rate = discr_success_rate * (1. - alpha) + alpha * d_acc
                         d_steps += 1
                     else:
+                        # generator train step
+                        # Generator
+                        d_out_fake = discrim(stylized_im)  # keep attached to generator because grads needed
+
+                        g_loss = disc_wt * gen_loss(d_out_fake, 1)
+                        g_loss += trans_wt * transf_loss(transformed_inputs, transformed_outputs)
+                        g_loss += style_wt * style_aware_loss(emb, stylized_emb)
                         g_loss.backward()
                         optimizer.step()
                         discr_success_rate = discr_success_rate * (1. - alpha) + alpha * (1. - gen_acc)
@@ -185,7 +207,8 @@ def main():
                             utils.export_image([images[idx, :, :, :], style_images[idx, :, :, :], stylized_im[idx, :, :, :]], output_path)
 
                     its += 1
-                    scheduler.step()
+                    scheduler_g.step()
+                    scheduler_d.step()
 
                     if not its % 10000:
                         if not os.path.exists('tmp'):

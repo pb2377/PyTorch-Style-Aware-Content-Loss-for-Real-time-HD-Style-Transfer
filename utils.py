@@ -8,10 +8,11 @@ def accuracy(outputs, target_label):
     total = 0.
     corrects = 0.
     for idx in range(len(outputs)):
-        output = torch.flatten(torch.sigmoid(outputs[idx]))
+        # output = torch.flatten(torch.sigmoid(outputs[idx]))
+        output = torch.flatten((outputs[idx]))
         # out_labels = torch.zeros_like(output)ot
         # out_labels[output > 0.5] = 1
-        pred = output > 0.5
+        pred = output > 0
         corrects += torch.sum(pred.view(-1) == target_label).float()
         total += output.view(-1).size(0)
     return corrects/total
