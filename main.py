@@ -25,9 +25,9 @@ def main():
     win_rate = 0.8
     log_interval = int(max_its // 20)
     log_interval = 2
-    # if log_interval < 10:
-    #    print("\n WARNING: VERY SMALL LOG INTERVAL\n")
-    #
+    if log_interval < 10:
+       print("\n WARNING: VERY SMALL LOG INTERVAL\n")
+
     lam = 0.001
     disc_wt = 1.
     trans_wt = 100.
@@ -142,6 +142,11 @@ def main():
                     transformed_inputs, transformed_outputs = tblock(images, stylized_im)
                     # add loss
 
+                    # discriminator
+                    d_out_fake = discrim(stylized_im)  # keep attached to generator because grads needed
+                    d_out_real_ph = discrim(images)
+                    d_out_real_style = discrim(style_images)
+
                     # accuracy given all the images
                     d_acc_neg = utils.accuracy(d_out_real_ph, target_label=0) + utils.accuracy(d_out_fake,
                                                                                                target_label=0)
@@ -154,10 +159,8 @@ def main():
                     g_loss = 0
                     if discr_success_rate < win_rate:
                         # discriminator train step
-                        d_out_real_ph = discrim(images)
                         d_out_fake = discrim(stylized_im.clone().detach())
                         # detach from generator, so not propagating unnecessary gradients
-                        d_out_real_style = discrim(style_images)
 
                         for idx in range(len(d_out_real_ph)):
                             inputs = [d_out_real_ph[idx], d_out_fake[idx], d_out_real_style[idx]]
@@ -172,8 +175,6 @@ def main():
                     else:
                         # generator train step
                         # Generator
-                        d_out_fake = discrim(stylized_im)  # keep attached to generator because grads needed
-
                         g_loss = disc_wt * gen_loss(d_out_fake, 1)
                         g_loss += trans_wt * transf_loss(transformed_inputs, transformed_outputs)
                         g_loss += style_wt * style_aware_loss(emb, stylized_emb)
