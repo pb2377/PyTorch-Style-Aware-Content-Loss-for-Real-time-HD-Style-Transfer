@@ -159,9 +159,9 @@ def main():
 
                     if discr_success_rate < win_rate:
                         # discriminator train step
-                        # d_out_fake = discrim(stylized_im.clone().detach())
+                        d_out_fake = discrim(stylized_im.clone().detach())
                         # detach from generator, so not propagating unnecessary gradients
-
+                        d_loss = 0.
                         for idx in range(len(d_out_real_ph)):
                             inputs = [d_out_real_ph[idx], d_out_fake[idx], d_out_real_style[idx]]
                             targets = [0, 0, 1]
@@ -175,6 +175,7 @@ def main():
                     else:
                         # generator train step
                         # Generator
+                        del g_loss
                         g_loss = disc_wt * gen_loss(d_out_fake, 1)
                         g_loss += trans_wt * transf_loss(transformed_inputs, transformed_outputs)
                         g_loss += style_wt * style_aware_loss(emb, stylized_emb)
