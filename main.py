@@ -17,7 +17,7 @@ def main():
     max_its = 300000
     max_eps = 10000
     optimizer = 'adam'  # separate optimizers for discriminator and autoencoder
-    lr = 0.001
+    lr = 0.0002
     batch_size = 1
     step_lr_gamma = 0.1
     step_lr_step = 200000
@@ -144,22 +144,19 @@ def main():
                     transformed_inputs, transformed_outputs = tblock(images, stylized_im)
                     # add loss
 
-                    # discriminator
-                    d_out_fake = discrim(stylized_im)  # keep attached to generator because grads needed
-                    d_out_real_ph = discrim(images)
-                    d_out_real_style = discrim(style_images)
-
-                    # accuracy given all the images
-                    d_acc_neg = utils.accuracy(d_out_real_ph, target_label=0) + utils.accuracy(d_out_fake,
-                                                                                               target_label=0)
-                    d_acc_pos = utils.accuracy(d_out_real_style, target_label=1)
-                    d_acc = (d_acc_neg + d_acc_pos) / 3
-                    d_acc_neg /= 2
-                    gen_acc = utils.accuracy(d_out_fake, target_label=1)  # accuracy given only the output image
-
                     if discr_success_rate < win_rate:
                         # discriminator train step
-                        d_out_fake = discrim(stylized_im.clone().detach())
+                        # discriminator
+                        d_out_fake = discrim(stylized_im.clone().detach())   # keep attached to generator because grads needed
+                        d_out_real_ph = discrim(images)
+                        d_out_real_style = discrim(style_images)
+
+                        # accuracy given all the images
+                        d_acc_real_ph = utils.accuracy(d_out_real_ph, target_label=0)
+                        d_acc_fake_style = utils.accuracy(d_out_fake, target_label=0)
+                        d_acc_real_style = utils.accuracy(d_out_real_style, target_label=1)
+                        d_acc = (d_acc_real_ph + d_acc_fake_style + d_acc_real_style) / 3
+
                         # detach from generator, so not propagating unnecessary gradients
                         d_loss = 0.
                         for idx in range(len(d_out_real_ph)):
@@ -174,7 +171,15 @@ def main():
                         d_steps += 1
                     else:
                         # generator train step
-                        # Generator
+                        # Generator discrim losses
+
+                        # discriminator
+                        d_out_fake = discrim(stylized_im)  # keep attached to generator because grads needed
+
+                        # accuracy given all the images
+                        gen_acc = utils.accuracy(d_out_fake, target_label=1)  # accuracy given only the output image
+                        print(gen_acc)
+
                         del g_loss
                         g_loss = disc_wt * gen_loss(d_out_fake, 1)
                         g_loss += trans_wt * transf_loss(transformed_inputs, transformed_outputs)
