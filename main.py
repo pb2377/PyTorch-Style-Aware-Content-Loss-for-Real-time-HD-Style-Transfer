@@ -180,7 +180,6 @@ def main():
 
                         # accuracy given the fake output, generator images
                         gen_acc = utils.accuracy(d_out_fake, target_label=1)  # accuracy given only the output image
-                        print(gen_acc)
 
                         del g_loss
                         g_loss = disc_wt * gen_loss(d_out_fake, 1)
