@@ -113,6 +113,8 @@ def main():
         discrim.train()
         d_loss = 0
         g_loss = 0
+        gen_acc = 0
+        d_acc = 0
         for epoch in range(max_eps):
                 if its > max_its:
                     break
@@ -176,7 +178,7 @@ def main():
                         # discriminator
                         d_out_fake = discrim(stylized_im)  # keep attached to generator because grads needed
 
-                        # accuracy given all the images
+                        # accuracy given the fake output, generator images
                         gen_acc = utils.accuracy(d_out_fake, target_label=1)  # accuracy given only the output image
                         print(gen_acc)
 
