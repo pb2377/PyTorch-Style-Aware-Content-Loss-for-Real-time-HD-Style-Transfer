@@ -167,6 +167,7 @@ def main():
                         d_acc_real_ph = utils.accuracy(d_out_real_ph, target_label=0)
                         d_acc_fake_style = utils.accuracy(d_out_fake, target_label=0)
                         d_acc_real_style = utils.accuracy(d_out_real_style, target_label=1)
+                        gen_acc = 1 - d_acc_fake_style
                         d_acc = (d_acc_real_ph + d_acc_fake_style + d_acc_real_style) / 3
 
                         # Loss calculation
