@@ -58,8 +58,8 @@ def main():
             discrim = torch.load("tmp/discriminator.pt", map_location=device)
 
         # Losses
-        gen_loss = losses.GeneratorLoss()
-        disc_loss = losses.DiscriminatorLoss()
+        gen_loss = losses.SoftmaxLoss()
+        disc_loss = losses.SoftmaxLoss()
         transf_loss = losses.TransformedLoss()
         style_aware_loss = losses.StyleAwareContentLoss()
 
