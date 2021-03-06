@@ -24,16 +24,15 @@ import torch.nn as nn
 class SoftmaxLoss(nn.Module):
     def __init__(self):
         super(SoftmaxLoss, self).__init__()
-        self.loss = nn.BCEWithLogitsLoss()
+        self.loss = nn.BCEWithLogitsLoss(reduction='mean')
 
-    def forward(self, x, target_labels):
+    def forward(self, x, target_label):
         # loss D(y)
         # predict ones for real art, zeros for fake art and photos
-        x = [i.view(-1, 1) for i in x]
-        x = torch.cat(tuple(x), dim=1)
-        print(x.size())
-        labels = torch.ones_like(x)
-        loss = self.loss(x, labels)
+        loss = 0.
+        for output in x:
+            labels = torch.ones_like(output) * target_label
+            loss += self.loss(output, labels)
         return loss
 
 
