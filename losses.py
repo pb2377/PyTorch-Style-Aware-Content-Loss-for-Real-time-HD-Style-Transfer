@@ -80,7 +80,8 @@ class StyleAwareContentLoss(nn.Module):
         # loss = torch.norm(x_emb - stylized_emb, dim=1).pow(2)  # could be torch.norm(e_emb - stylized_emb, dim=1)?
         # loss *= x_emb.size(1)
         # This is ABS criterion loss they use:
-        return torch.add(x_emb, -stylized_emb).abs().mean()
+        delta = x_emb - stylized_emb
+        return delta.abs().mean()
 
 
 class TransformedLoss(nn.Module):

@@ -158,6 +158,7 @@ def main():
                     if discr_success_rate < win_rate:
                         # discriminator train step
                         # discriminator
+                        # detach from generator, so not propagating unnecessary gradients
                         d_out_fake = discrim(stylized_im.clone().detach())   # keep attached to generator because grads needed
                         d_out_real_ph = discrim(images)
                         d_out_real_style = discrim(style_images)
@@ -168,13 +169,10 @@ def main():
                         d_acc_real_style = utils.accuracy(d_out_real_style, target_label=1)
                         d_acc = (d_acc_real_ph + d_acc_fake_style + d_acc_real_style) / 3
 
-                        # detach from generator, so not propagating unnecessary gradients
-                        d_loss = 0.
-                        for idx in range(len(d_out_real_ph)):
-                            inputs = [d_out_real_ph[idx], d_out_fake[idx], d_out_real_style[idx]]
-                            targets = [0, 0, 1]
-                            d_loss += disc_loss(inputs, targets)
-                        d_loss *= disc_wt
+                        # Loss calculation
+                        d_loss = disc_loss(d_out_fake, target_label=0)
+                        d_loss += disc_loss(d_out_real_style, target_label=0)
+                        d_loss += disc_loss(d_out_real_ph, target_label=1)
 
                         d_loss.backward()
                         d_optimizer.step()
@@ -191,7 +189,7 @@ def main():
                         gen_acc = utils.accuracy(d_out_fake, target_label=1)  # accuracy given only the output image
 
                         del g_loss
-                        g_loss = disc_wt * gen_loss(d_out_fake, 1)
+                        g_loss = disc_wt * gen_loss(d_out_fake, target_label=1)
                         g_loss += trans_wt * transf_loss(transformed_inputs, transformed_outputs)
                         g_loss += style_wt * style_aware_loss(emb, stylized_emb)
                         g_loss.backward()
