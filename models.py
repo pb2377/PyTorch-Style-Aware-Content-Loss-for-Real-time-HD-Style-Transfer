@@ -41,14 +41,16 @@ class Decoder(nn.Module):
         kernel_size = 7
         self.conv7x7 = nn.Sequential(nn.ReflectionPad2d(kernel_size // 2),
                                      nn.Conv2d(in_channels=32, out_channels=3, kernel_size=kernel_size, stride=1))
-        # self.sigm = nn.Sigmoid()
-        self.tanh = nn.Tanh()
+        self.sigm = nn.Sigmoid()
+        # self.tanh = nn.Tanh()
 
     def forward(self, x):
         x = self.resblocks(x)
         x = self.uplayers(x)
         x = self.conv7x7(x)
-        x = self.tanh(x)
+        x = self.sigm(x)
+        x *= 2
+        x -= 1
         return x
 
 

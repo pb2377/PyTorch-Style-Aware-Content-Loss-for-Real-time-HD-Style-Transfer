@@ -52,10 +52,23 @@ class ResidualBlock(nn.Module):
         return x
 
 
+# class UpConvBlock(nn.Module):
+#     def __init__(self, in_channels, out_channels, kernel_size, stride, relu=True):
+#         super(UpConvBlock, self).__init__()
+#         self.block = ConvLayer(in_channels, out_channels, kernel_size, stride, relu=relu)
+#
+#     def forward(self, x):
+#         return self.block(F.interpolate(x, scale_factor=2, mode='nearest'))
+
+
 class UpConvBlock(nn.Module):
-    def __init__(self, in_channels, out_channels, kernel_size, stride, relu=True):
+    def __init__(self, in_channels, out_channels, kernel_size=4, stride=2, relu=True):
         super(UpConvBlock, self).__init__()
-        self.block = ConvLayer(in_channels, out_channels, kernel_size, stride, relu=relu)
+        # self.block = ConvLayer(in_channels, out_channels/, kernel_size, stride, relu=relu)
+        self.conv = nn.ConvTranspose2D(in_channels, out_channels, kernel_size, stride)
+        self.relu = nn.ReLU()
+        self.instn = nn.InstanceNorm2d(out_channels,  affine=True)
 
     def forward(self, x):
-        return self.block(F.interpolate(x, scale_factor=2, mode='nearest'))
+        return self.relu(self.instn(self.conv(x)))
+

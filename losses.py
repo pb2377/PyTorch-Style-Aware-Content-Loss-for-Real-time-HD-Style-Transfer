@@ -74,14 +74,12 @@ class SoftmaxLoss(nn.Module):
 class StyleAwareContentLoss(nn.Module):
     def __init__(self):
         super(StyleAwareContentLoss, self).__init__()
+        self.loss = nn.L1Loss()
 
     def forward(self, x_emb, stylized_emb):
         # normalized square euclidean distance between x_emb and stylize_emb
         # loss = torch.norm(x_emb - stylized_emb, dim=1).pow(2)  # could be torch.norm(e_emb - stylized_emb, dim=1)?
-        # loss *= x_emb.size(1)
-        # This is ABS criterion loss they use:
-        delta = x_emb - stylized_emb
-        return delta.abs().mean()
+        return self.loss(x_emb, stylized_emb)
 
 
 class TransformedLoss(nn.Module):
