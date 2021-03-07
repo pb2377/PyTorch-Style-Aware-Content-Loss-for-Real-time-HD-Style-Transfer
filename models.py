@@ -72,14 +72,14 @@ class Discriminator(nn.Module):
                                        kernel_size=kernel_size, stride=stride, leak=leak))
             if layer_id in self.aux_ids:
                 aux_layers.append(nn.Conv2d(in_channels=out_channels, out_channels=1, kernel_size=aux_ks[0], stride=1,
-                                            padding=1, bias=False))
+                                            padding=1, bias=True))
                 aux_ks.pop(0)
 
         self.layers = nn.ModuleList(layers)
         self.aux_classifiers = nn.ModuleList(aux_layers)
         # self.classifier = L.ConvLayer(in_channels=in_channels, out_channels=1, kernel_size=10, stride=1, relu=False)
         self.classifier = nn.Conv2d(in_channels=1024, out_channels=1, kernel_size=3, stride=1, padding=1,
-                                    bias=False)
+                                    bias=True)
 
     def forward(self, x):
         # x = self.instn(x.unsqueeze(1)).squeeze(1)
