@@ -35,7 +35,7 @@ class Decoder(nn.Module):
         for spec in layer_spec:
             in_channels, out_channels, kernel_size, stride = spec
             layers.append(L.UpConvBlock(in_channels=in_channels, out_channels=out_channels,
-                                        kernel_size=kernel_size, stride=stride, relu=True))
+                                        kernel_size=kernel_size, stride=stride))
         self.uplayers = nn.Sequential(*layers)
 
         kernel_size = 7
