@@ -65,7 +65,7 @@ class UpConvBlock(nn.Module):
     def __init__(self, in_channels, out_channels, kernel_size=4, stride=2, relu=True):
         super(UpConvBlock, self).__init__()
         # self.block = ConvLayer(in_channels, out_channels/, kernel_size, stride, relu=relu)
-        self.conv = nn.ConvTranspose2D(in_channels, out_channels, kernel_size, stride)
+        self.conv = nn.ConvTranspose2d(in_channels, out_channels, kernel_size, stride)
         self.relu = nn.ReLU()
         self.instn = nn.InstanceNorm2d(out_channels,  affine=True)
 
