@@ -12,14 +12,15 @@ class PlacesDataset(data.Dataset):
         super(PlacesDataset, self).__init__()
         """Initialisation"""
         dataset_dir = '../Datasets/Places365/'
-        if input_size > 256:
+        # if input_size > 256:
+        if True:
             data_dir = 'data_large'
             self.min_size = 800.
             self.max_size = 1800.
-        else:
-            data_dir = 'data_256'
-            self.min_size = 300.
-            self.max_size = 1000.
+        # else:
+        #     data_dir = 'data_256'
+        #     self.min_size = 300.
+        #     self.max_size = 1000.
 
             # print('Cannot Use Original Images, upscaling 256x256 to 768x768')
             # raise NotImplementedError('Only implemented 256x256 dataset')
