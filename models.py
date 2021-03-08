@@ -48,9 +48,7 @@ class Decoder(nn.Module):
         x = self.resblocks(x)
         x = self.uplayers(x)
         x = self.conv7x7(x)
-        x = self.sigm(x)
-        x *= 2
-        x -= 1
+        x = 2 * self.sigm(x) - 1
         return x
 
 
