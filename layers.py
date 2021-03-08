@@ -6,21 +6,21 @@ import torch.nn.functional as F
 class ConvLayer(nn.Module):
     def __init__(self, in_channels, out_channels, kernel_size, stride, relu=True):
         super(ConvLayer, self).__init__()
-        # reflection_padding = kernel_size // 2
-        # reflection_pad = torch.nn.ReflectionPad2d(reflection_padding)
+        reflection_padding = kernel_size // 2
+        reflection_pad = torch.nn.ReflectionPad2d(reflection_padding)
         conv = nn.Conv2d(in_channels, out_channels, kernel_size=kernel_size, stride=stride, bias=False)
         # conv = nn.Conv2d(in_channels, out_channels, kernel_size=kernel_size, stride=stride, bias=False,
         #                  padding_mode='reflect')
         instn = nn.InstanceNorm2d(out_channels,  affine=True)  #, track_running_stats=True)
 
-        # if relu:
-        #     self.layer = nn.Sequential(*(reflection_pad, conv, instn, nn.ReLU()))
-        # else:
-        #     self.layer = nn.Sequential(*(reflection_pad, conv, instn))
         if relu:
-            self.layer = nn.Sequential(*(conv, instn, nn.ReLU()))
+            self.layer = nn.Sequential(*(reflection_pad, conv, instn, nn.ReLU()))
         else:
-            self.layer = nn.Sequential(*(conv, instn))
+            self.layer = nn.Sequential(*(reflection_pad, conv, instn))
+        # if relu:
+        #     self.layer = nn.Sequential(*(conv, instn, nn.ReLU()))
+        # else:
+        #     self.layer = nn.Sequential(*(conv, instn))
 
     def forward(self, x):
         return self.layer(x)
@@ -29,16 +29,16 @@ class ConvLayer(nn.Module):
 class LeakyLayer(nn.Module):
     def __init__(self, in_channels, out_channels, kernel_size, stride, leak=0.2):
         super(LeakyLayer, self).__init__()
-        # reflection_padding = kernel_size // 2
-        # reflection_pad = torch.nn.ReflectionPad2d(reflection_padding)
+        reflection_padding = kernel_size // 2
+        reflection_pad = torch.nn.ReflectionPad2d(reflection_padding)
         conv = nn.Conv2d(in_channels, out_channels, kernel_size=kernel_size, stride=stride, bias=False)
         # conv = nn.Conv2d(in_channels, out_channels, kernel_size=kernel_size, stride=stride, bias=False,
         #                  padding_mode='reflect')
         instn = nn.InstanceNorm2d(out_channels,  affine=True)  #, track_running_stats=True)
         relu = nn.LeakyReLU(leak)
 
-        # self.layer = nn.Sequential(*(reflection_pad, conv, instn, relu))
-        self.layer = nn.Sequential(*(conv, instn, relu))
+        self.layer = nn.Sequential(*(reflection_pad, conv, instn, relu))
+        # self.layer = nn.Sequential(*(conv, instn, relu))
 
     def forward(self, x):
         return self.layer(x)
