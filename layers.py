@@ -57,6 +57,7 @@ class ResidualBlock(nn.Module):
     def forward(self, x):
         resi = x
         x = self.block(x)
+        print(x.size(), resi.size())
         x = x + resi
         return x
 
