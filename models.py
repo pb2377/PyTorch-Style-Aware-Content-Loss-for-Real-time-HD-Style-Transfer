@@ -11,8 +11,6 @@ def init_weights(net):
             mu = 0.0
             torch.nn.init.normal_(m.weight.data, mu, stddev)
             m.weight.data = torch.clamp(m.weight.data.clone(), mu - 2*stddev, mu+2*stddev)
-            print(m, m.weight.data.max(), m.weight.data.min())
-            # trunc = torch.clamp(trunc)
         elif isinstance(m, nn.InstanceNorm2d):
             stddev = 0.02
             mu = 1.0
@@ -63,7 +61,8 @@ class Decoder(nn.Module):
 
         kernel_size = 7
         self.conv7x7 = nn.Sequential(nn.ReflectionPad2d(kernel_size // 2),
-                                     nn.Conv2d(in_channels=32, out_channels=3, kernel_size=kernel_size, stride=1))
+                                     nn.Conv2d(in_channels=32, out_channels=3, kernel_size=kernel_size, stride=1,
+                                               bias=False))
         self.sigm = nn.Sigmoid()
         # self.tanh = nn.Tanh()
 
@@ -93,14 +92,14 @@ class Discriminator(nn.Module):
                                        kernel_size=kernel_size, stride=stride, leak=leak))
             if layer_id in self.aux_ids:
                 aux_layers.append(nn.Conv2d(in_channels=out_channels, out_channels=1, kernel_size=aux_ks[0], stride=1,
-                                            padding=1, bias=True))
+                                            padding=1, bias=False))
                 aux_ks.pop(0)
 
         self.layers = nn.ModuleList(layers)
         self.aux_classifiers = nn.ModuleList(aux_layers)
         # self.classifier = L.ConvLayer(in_channels=in_channels, out_channels=1, kernel_size=10, stride=1, relu=False)
         self.classifier = nn.Conv2d(in_channels=1024, out_channels=1, kernel_size=3, stride=1, padding=1,
-                                    bias=True)
+                                    bias=False)
 
     def forward(self, x):
         # x = self.instn(x.unsqueeze(1)).squeeze(1)
@@ -112,7 +111,6 @@ class Discriminator(nn.Module):
                 outputs.append(self.aux_classifiers[aux_id](x))
                 aux_id += 1
         outputs.append(self.classifier(x))
-        # outputs = torch.cat(tuple([i.view(x.size(0), -1) for i in outputs]), dim=1)
         return outputs
 
 
