@@ -78,6 +78,7 @@ def main():
         # # optimizer = torch.optim.Adam(params_to_update, lr=lr)
 
         data_dir = '../Datasets/WikiArt-Sorted/data/vincent-van-gogh_road-with-cypresses-1890'
+        # data_dir = '../Datasets/WikiArt-Sorted/data/edvard-munch/'
         style_data = datasets.StyleDataset(data_dir)
         num_workers = 8
         # if mpii:
