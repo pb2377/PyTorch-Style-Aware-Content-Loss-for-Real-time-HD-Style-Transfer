@@ -16,7 +16,7 @@ def init_weights(net):
             mu = 1.0
             init.normal_(m.weight.data, mu, stddev)
             if hasattr(m, 'bias'):
-                init.constant(m.bias.data, 0.0)
+                init.constant(_m.bias.data, 0.0)
         # else:
             # print(m)
             # raise NotImplementedError
