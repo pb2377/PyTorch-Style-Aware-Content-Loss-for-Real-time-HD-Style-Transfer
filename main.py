@@ -147,8 +147,6 @@ def main():
                     emb = encoder(images)
                     stylized_im = decoder(emb)
 
-                    print(stylized_im.size(), images.size())
-
                     # if training do losses etc
                     stylized_emb = encoder(stylized_im)
                     # add losses
