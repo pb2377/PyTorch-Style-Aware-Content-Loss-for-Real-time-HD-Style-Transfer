@@ -10,7 +10,7 @@ from time import process_time
 
 def main():
     train = True
-    input_size = 768
+    input_size = 512
     # crop_size = 256  # set to none for default cropping
     dual_optim = False
     print("Training with Places365 Dataset")
