@@ -35,8 +35,7 @@ def main():
 
     alpha = 0.05
 
-    tblock_kernel = 11 if input_size == 768 else round(11 * input_size/768)
-    tblock_kernel = max(tblock_kernel, 3)
+    tblock_kernel = 10 if input_size == 768 else round(11 * input_size/768)
     # Models
     encoder = models.Encoder()
     decoder = models.Decoder()
