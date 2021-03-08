@@ -7,11 +7,11 @@ from torch.nn import init
 def init_weights(net):
     def init_func(m):
         if isinstance(m, nn.Conv2d):
-            stddev = 0.01
+            stddev = 0.02
             mu = 0.0
             torch.nn.init.normal_(m.weight.data, mu, stddev)
             m.weight.data = torch.clamp(m.weight.data.clone(), mu - 2*stddev, mu+2*stddev)
-            print(m.weight.data.max(), m.weight.data.min())
+            print(m, m.weight.data.max(), m.weight.data.min())
             # trunc = torch.clamp(trunc)
         elif isinstance(m, nn.InstanceNorm2d):
             stddev = 0.02
