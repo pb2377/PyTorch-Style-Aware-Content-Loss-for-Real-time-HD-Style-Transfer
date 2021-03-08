@@ -171,8 +171,8 @@ def main():
 
                         # Loss calculation
                         d_loss = disc_loss(d_out_fake, target_label=0)
-                        d_loss += disc_loss(d_out_real_style, target_label=0)
-                        d_loss += disc_loss(d_out_real_ph, target_label=1)
+                        d_loss += disc_loss(d_out_real_style, target_label=1)
+                        d_loss += disc_loss(d_out_real_ph, target_label=0)
 
                         d_loss.backward()
                         d_optimizer.step()

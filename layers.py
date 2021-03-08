@@ -9,7 +9,7 @@ class ConvLayer(nn.Module):
         reflection_padding = kernel_size // 2
         reflection_pad = torch.nn.ReflectionPad2d(reflection_padding)
         conv = nn.Conv2d(in_channels, out_channels, kernel_size=kernel_size, stride=stride, bias=False)
-        instn = nn.InstanceNorm2d(out_channels,  affine=True)
+        instn = nn.InstanceNorm2d(out_channels,  affine=True)  #, track_running_stats=True)
 
         if relu:
             self.layer = nn.Sequential(*(reflection_pad, conv, instn, nn.ReLU()))
@@ -21,12 +21,12 @@ class ConvLayer(nn.Module):
 
 
 class LeakyLayer(nn.Module):
-    def __init__(self, in_channels, out_channels, kernel_size, stride, leak=0.01):
+    def __init__(self, in_channels, out_channels, kernel_size, stride, leak=0.2):
         super(LeakyLayer, self).__init__()
         reflection_padding = kernel_size // 2
         reflection_pad = torch.nn.ReflectionPad2d(reflection_padding)
         conv = nn.Conv2d(in_channels, out_channels, kernel_size=kernel_size, stride=stride, bias=False)
-        instn = nn.InstanceNorm2d(out_channels,  affine=True)
+        instn = nn.InstanceNorm2d(out_channels,  affine=True)  #, track_running_stats=True)
         relu = nn.LeakyReLU(leak)
 
         self.layer = nn.Sequential(*(reflection_pad, conv, instn, relu))
