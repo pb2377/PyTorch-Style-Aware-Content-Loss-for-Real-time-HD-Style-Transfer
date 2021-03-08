@@ -10,7 +10,7 @@ from time import process_time
 
 def main():
     train = True
-    input_size = 512
+    input_size = 256
     # crop_size = 256  # set to none for default cropping
     dual_optim = False
     print("Training with Places365 Dataset")
@@ -18,7 +18,7 @@ def main():
     max_eps = 20000
     optimizer = 'adam'  # separate optimizers for discriminator and autoencoder
     lr = 0.0002
-    batch_size = 1
+    batch_size = 4
     step_lr_gamma = 0.1
     step_lr_step = 200000
     discr_success_rate = 0.8
