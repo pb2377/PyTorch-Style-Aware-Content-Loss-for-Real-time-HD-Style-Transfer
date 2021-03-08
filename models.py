@@ -28,7 +28,7 @@ def init_weights(net):
                 init.constant(m.bias.data, 0.0)
         else:
             print(m)
-            raise NotImplementedError
+            # raise NotImplementedError
 
     net.apply(init_func)
 
