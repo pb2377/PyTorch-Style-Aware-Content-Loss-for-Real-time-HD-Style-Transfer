@@ -10,7 +10,7 @@ from time import process_time
 
 def main():
     train = True
-    input_size = 512
+    input_size = 768
     # crop_size = 256  # set to none for default cropping
     dual_optim = False
     print("Training with Places365 Dataset")
@@ -24,7 +24,7 @@ def main():
     discr_success_rate = 0.8
     win_rate = 0.8
     log_interval = int(max_its // 50)
-    log_interval = 2
+    log_interval = 100
     if log_interval < 10:
        print("\n WARNING: VERY SMALL LOG INTERVAL\n")
 
@@ -35,10 +35,9 @@ def main():
 
     alpha = 0.05
 
-    tblock_kernel = 10 if input_size == 768 else round(11 * input_size/768)
+    tblock_kernel = 10
     # Models
     encoder = models.Encoder()
-    print(encoder)
     decoder = models.Decoder()
     tblock = models.TransformerBlock(kernel_size=tblock_kernel)
     discrim = models.Discriminator()
