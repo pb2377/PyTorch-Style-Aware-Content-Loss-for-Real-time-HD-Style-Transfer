@@ -41,6 +41,13 @@ def main():
     decoder = models.Decoder()
     tblock = models.TransformerBlock(kernel_size=tblock_kernel)
     discrim = models.Discriminator()
+
+    # init weights
+    models.init_weights(encoder)
+    models.init_weights(decoder)
+    models.init_weights(tblock)
+    models.init_weights(discrim)
+
     if torch.cuda.is_available():
         encoder = encoder.cuda()
         decoder = decoder.cuda()

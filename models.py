@@ -1,6 +1,35 @@
 import torch
 import torch.nn as nn
 import layers as L
+from torch.nn import init
+
+
+def truncated_normal(t, mean=0.0, std=0.01):
+    torch.nn.init.normal_(t, mean=mean, std=std)
+    while True:
+      cond = torch.logical_or(t < mean - 2*std, t > mean + 2*std)
+      if not torch.sum(cond):
+        break
+      t = torch.where(cond, torch.nn.init.normal_(torch.ones(t.shape), mean=mean, std=std), t)
+    return t
+
+
+def init_weights(net):
+    def init_func(m):
+        if isinstance(m, nn.Conv2d):
+            stddev = 0.01
+            mu = 0.0
+            m.weight.data = truncated_normal(m.weight.data, mean=mu, std=stddev)
+        elif isinstance(m, nn.InstanceNorm2d):
+            stddev = 0.02
+            mu = 1.0
+            init.normal(m.weight.data, mu, stddev)
+            if hasattr(m, 'bias'):
+                init.constant(m.bias.data, 0.0)
+        else:
+            raise NotImplementedError
+
+    net.apply(init_func)
 
 
 class Encoder(nn.Module):
