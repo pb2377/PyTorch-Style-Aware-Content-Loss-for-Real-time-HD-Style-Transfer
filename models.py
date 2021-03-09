@@ -4,14 +4,24 @@ import layers as L
 from torch.nn import init
 
 
+def truncated_normal(wt, mu=0.0, stddev=0.02):
+    wt = torch.nn.init.normal_(wt, mu, stddev)
+    while True:
+        lowerb = wt < mu - 2 * stddev
+        upperb = wt > mu + 2 * stddev
+        cond = (lowerb + upperb) > 0
+        if not torch.sum(cond):
+            break
+        wt = torch.where(cond, torch.nn.init.normal_(torch.ones(wt.shape), mu, stddev), wt)
+    return wt
+
+
 def init_weights(net):
     def init_func(m):
         if isinstance(m, nn.Conv2d):
             stddev = 0.02
             mu = 0.0
-            torch.nn.init.normal_(m.weight.data, mu, stddev)
-
-            m.weight.data = torch.clamp(m.weight.data.clone(), mu - 2*stddev, mu+2*stddev)
+            m.weight.data = truncated_normal(m.weight.data, mu, stddev)
             if hasattr(m, 'bias') and m.bias is not None:
                 init.constant_(m.bias.data, 0.0)
         elif isinstance(m, nn.InstanceNorm2d):
