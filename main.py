@@ -23,8 +23,8 @@ def main():
     step_lr_step = 200000
     discr_success_rate = 0.8
     win_rate = 0.8
-    log_interval = int(max_its // 50)
-    log_interval = 100
+    log_interval = int(max_its // 100)
+    # log_interval = 100
     if log_interval < 10:
        print("\n WARNING: VERY SMALL LOG INTERVAL\n")
 
