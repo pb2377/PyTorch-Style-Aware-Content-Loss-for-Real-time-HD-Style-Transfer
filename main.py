@@ -166,7 +166,7 @@ def main():
                         # discriminator train step
                         # discriminator
                         # detach from generator, so not propagating unnecessary gradients
-                        d_out_fake = discrim(stylized_im.clone().detach())   # keep attached to generator because grads needed
+                        d_out_fake = discrim(stylized_im.clone().detach())
                         d_out_real_ph = discrim(images)
                         d_out_real_style = discrim(style_images)
 

@@ -10,7 +10,10 @@ def init_weights(net):
             stddev = 0.02
             mu = 0.0
             torch.nn.init.normal_(m.weight.data, mu, stddev)
+
             m.weight.data = torch.clamp(m.weight.data.clone(), mu - 2*stddev, mu+2*stddev)
+            if hasattr(m, 'bias') and m.bias is not None:
+                init.constant_(m.bias.data, 0.0)
         elif isinstance(m, nn.InstanceNorm2d):
             stddev = 0.02
             mu = 1.0
