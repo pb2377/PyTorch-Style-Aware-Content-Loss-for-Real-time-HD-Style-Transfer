@@ -57,6 +57,8 @@ def main():
     if train:
         # load tmp weights
         if os.path.exists('tmp'):
+            print('Loading from tmp...')
+            assert os.path.exists("tmp/encoder.pt")
             device = 'cuda' if torch.cuda.is_available() else 'cpu'
             encoder = torch.load("tmp/encoder.pt", map_location=device)
             decoder = torch.load("tmp/decoder.pt", map_location=device)

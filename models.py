@@ -56,6 +56,7 @@ class Decoder(nn.Module):
     def __init__(self):
         super(Decoder, self).__init__()
         resblocks = []
+        output_bias = True
         in_channels = 256
         out_channels = 256
         kernel_size = 3
@@ -75,7 +76,7 @@ class Decoder(nn.Module):
         kernel_size = 7
         self.conv7x7 = nn.Sequential(nn.ReflectionPad2d(kernel_size // 2),
                                      nn.Conv2d(in_channels=32, out_channels=3, kernel_size=kernel_size, stride=1,
-                                               bias=True))
+                                               bias=output_bias))
         self.sigm = nn.Sigmoid()
         # self.tanh = nn.Tanh()
 
@@ -90,6 +91,7 @@ class Decoder(nn.Module):
 class Discriminator(nn.Module):
     def __init__(self):
         super(Discriminator, self).__init__()
+        classifier_bias = True
         kernel_size = 5
         stride = 2
         leak = 0.2
@@ -105,14 +107,14 @@ class Discriminator(nn.Module):
                                        kernel_size=kernel_size, stride=stride, leak=leak))
             if layer_id in self.aux_ids:
                 aux_layers.append(nn.Conv2d(in_channels=out_channels, out_channels=1, kernel_size=aux_ks[0], stride=1,
-                                            padding=1, bias=True))
+                                            padding=1, bias=classifier_bias))
                 aux_ks.pop(0)
 
         self.layers = nn.ModuleList(layers)
         self.aux_classifiers = nn.ModuleList(aux_layers)
         # self.classifier = L.ConvLayer(in_channels=in_channels, out_channels=1, kernel_size=10, stride=1, relu=False)
         self.classifier = nn.Conv2d(in_channels=1024, out_channels=1, kernel_size=3, stride=1, padding=1,
-                                    bias=True)
+                                    bias=classifier_bias)
 
     def forward(self, x):
         # x = self.instn(x.unsqueeze(1)).squeeze(1)
