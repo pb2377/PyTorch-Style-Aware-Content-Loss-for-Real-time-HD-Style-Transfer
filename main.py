@@ -155,7 +155,7 @@ def main():
                     stylized_im = decoder(emb)
 
                     # if training do losses etc
-                    stylized_emb = encoder(stylized_im)
+                    stylized_emb = encoder(stylized_im.clone().detach())
                     # add losses
 
                     # tblock
