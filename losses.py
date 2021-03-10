@@ -76,10 +76,9 @@ class StyleAwareContentLoss(nn.Module):
         super(StyleAwareContentLoss, self).__init__()
         self.loss = nn.L1Loss()
 
-    def forward(self, x_emb, stylized_emb):
-        # normalized square euclidean distance between x_emb and stylize_emb
-        # loss = torch.norm(x_emb - stylized_emb, dim=1).pow(2)  # could be torch.norm(e_emb - stylized_emb, dim=1)?
-        return self.loss(x_emb, stylized_emb)
+    def forward(self, x_inputs, gx_outputs):
+        # abs euclidean distance between photo embedding and and stylized emb
+        return self.loss(x_inputs, gx_outputs)
 
 
 class TransformedLoss(nn.Module):

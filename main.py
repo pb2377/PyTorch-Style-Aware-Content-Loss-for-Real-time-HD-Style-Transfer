@@ -96,7 +96,7 @@ def main():
 
         # optimizer for encoder/decoder (and tblock? - think it has no parameters though)
         gen_params = []
-        for m in [encoder, decoder, tblock]:
+        for m in [encoder, decoder]:
             for param in m.parameters():
                 param.requires_grad = True
                 gen_params.append(param)
