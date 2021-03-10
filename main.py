@@ -198,8 +198,10 @@ def main():
 
                         del g_loss
                         g_loss = disc_wt * gen_loss(d_out_fake, target_label=1)
-                        g_loss += trans_wt * transf_loss(transformed_inputs, transformed_outputs)
-                        g_loss += style_wt * style_aware_loss(emb, stylized_emb)
+                        g_transf = trans_wt * transf_loss(transformed_inputs, transformed_outputs)
+                        g_style = style_wt * style_aware_loss(emb, stylized_emb)
+                        print(g_loss.item(), g_transf.item(), g_style.item())
+                        g_loss += g_transf + g_style
                         g_loss.backward()
                         d_optimizer.step()
                         discr_success_rate = discr_success_rate * (1. - alpha) + alpha * (1. - gen_acc)
