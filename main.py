@@ -205,6 +205,9 @@ def main():
                         discr_success_rate = discr_success_rate * (1. - alpha) + alpha * (1. - gen_acc)
                         g_steps += 1
 
+                        # print(gen_loss(d_out_fake, target_label=1), trans_wt * transf_loss(transformed_inputs, transformed_outputs),
+                        #       style_wt * style_aware_loss(emb, stylized_emb))
+
                     # print(g_loss.item(), g_steps, d_loss.item(), d_steps)
                     t1 = process_time()
                     time_per_it.append((t1-t0)/3600)

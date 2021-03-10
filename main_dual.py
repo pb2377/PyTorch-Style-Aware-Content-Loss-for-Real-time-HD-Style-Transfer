@@ -11,19 +11,19 @@ from time import process_time
 def main():
     train = True
     input_size = 768
-    # crop_size = 256  # set to none for default cropping
-    dual_optim = False
+    # input_size = 256  # set to none for default cropping
     print("Training with Places365 Dataset")
     max_its = 300000
     max_eps = 20000
-    lr = .0002
+    optimizer = 'adam'  # separate optimizers for discriminator and autoencoder
+    lr = 0.0002
     batch_size = 1
     step_lr_gamma = 0.1
     step_lr_step = 200000
     discr_success_rate = 0.8
     win_rate = 0.8
-    log_interval = int(max_its // 50)
-    # log_interval = 2
+    log_interval = int(max_its // 100)
+    # log_interval = 100
     if log_interval < 10:
        print("\n WARNING: VERY SMALL LOG INTERVAL\n")
 
@@ -34,13 +34,19 @@ def main():
 
     alpha = 0.05
 
-    tblock_kernel = 11 if input_size == 768 else round(11 * input_size/768)
-    tblock_kernel = max(tblock_kernel, 3)
+    tblock_kernel = 10
     # Models
     encoder = models.Encoder()
     decoder = models.Decoder()
     tblock = models.TransformerBlock(kernel_size=tblock_kernel)
     discrim = models.Discriminator()
+
+    # init weights
+    models.init_weights(encoder)
+    models.init_weights(decoder)
+    models.init_weights(tblock)
+    models.init_weights(discrim)
+
     if torch.cuda.is_available():
         encoder = encoder.cuda()
         decoder = decoder.cuda()
@@ -71,6 +77,7 @@ def main():
         # # optimizer = torch.optim.Adam(params_to_update, lr=lr)
 
         data_dir = '../Datasets/WikiArt-Sorted/data/vincent-van-gogh_road-with-cypresses-1890'
+        # data_dir = '../Datasets/WikiArt-Sorted/data/edvard-munch/'
         style_data = datasets.StyleDataset(data_dir)
         num_workers = 8
         # if mpii:
@@ -88,18 +95,18 @@ def main():
 
         # optimizer for encoder/decoder (and tblock? - think it has no parameters though)
         gen_params = []
-        for m in [encoder, decoder, tblock]:
+        for m in [encoder, decoder]:
             for param in m.parameters():
                 param.requires_grad = True
                 gen_params.append(param)
-        g_optimizer = torch.optim.Adam(gen_params, lr=lr, betas=(0.5, 0.999))
+        g_optimizer = torch.optim.Adam(gen_params, lr=lr)
 
         # optimizer for disciminator
         disc_params = []
         for param in discrim.parameters():
             param.requires_grad = True
             disc_params.append(param)
-        d_optimizer = torch.optim.Adam(disc_params, lr=lr, betas=(0.5, 0.999))
+        d_optimizer = torch.optim.Adam(disc_params, lr=lr)
 
         scheduler_g = torch.optim.lr_scheduler.StepLR(g_optimizer, step_lr_step, gamma=step_lr_gamma, last_epoch=-1)
         scheduler_d = torch.optim.lr_scheduler.StepLR(d_optimizer, step_lr_step, gamma=step_lr_gamma, last_epoch=-1)
@@ -132,6 +139,7 @@ def main():
 
                     # zero gradients
                     g_optimizer.zero_grad()
+                    d_optimizer.zero_grad()
 
                     if its > max_its:
                         break
@@ -145,27 +153,35 @@ def main():
                     emb = encoder(images)
                     stylized_im = decoder(emb)
 
-                    # generator
+                    # if training do losses etc
                     stylized_emb = encoder(stylized_im)
+                    # add losses
 
                     # tblock
                     transformed_inputs, transformed_outputs = tblock(images, stylized_im)
+                    # add loss
 
-                    # generator losses
-                    # pass generator output through discriminator
+
+                    # # # GENERATOR TRAIN # # # #
+                    g_optimizer.zero_grad()
                     d_out_fake = discrim(stylized_im)  # keep attached to generator because grads needed
+
+                    # accuracy given the fake output, generator images
+                    gen_acc = utils.accuracy(d_out_fake, target_label=1)  # accuracy given only the output image
+
+                    del g_loss
                     g_loss = disc_wt * gen_loss(d_out_fake, target_label=1)
                     g_loss += trans_wt * transf_loss(transformed_inputs, transformed_outputs)
                     g_loss += style_wt * style_aware_loss(emb, stylized_emb)
                     g_loss.backward()
                     d_optimizer.step()
+                    discr_success_rate = discr_success_rate * (1. - alpha) + alpha * (1. - gen_acc)
+                    g_steps += 1
 
-
-                    # discriminator train step
-                    # discriminator
-                    # detach from generator, so not propagating unnecessary gradients
+                    # # # DISCRIMINATOR TRAIN # # # #
                     d_optimizer.zero_grad()
-                    d_out_fake = discrim(stylized_im.clone().detach())   # keep attached to generator because grads needed
+                    # detach from generator, so not propagating unnecessary gradients
+                    d_out_fake = discrim(stylized_im.clone().detach())
                     d_out_real_ph = discrim(images)
                     d_out_real_style = discrim(style_images)
 
@@ -178,11 +194,14 @@ def main():
 
                     # Loss calculation
                     d_loss = disc_loss(d_out_fake, target_label=0)
-                    d_loss += disc_loss(d_out_real_style, target_label=0)
-                    d_loss += disc_loss(d_out_real_ph, target_label=1)
+                    d_loss += disc_loss(d_out_real_style, target_label=1)
+                    d_loss += disc_loss(d_out_real_ph, target_label=0)
 
                     d_loss.backward()
                     d_optimizer.step()
+                    discr_success_rate = discr_success_rate * (1. - alpha) + alpha * d_acc
+                    d_steps += 1
+
 
                     # print(g_loss.item(), g_steps, d_loss.item(), d_steps)
                     t1 = process_time()
@@ -195,8 +214,10 @@ def main():
                         time_rem = (max_its - its + 1) * running_mean_it_time
                         print("{}/{} -- {} G Steps -- G Loss {:.2f} -- G Acc {:.2f} -"
                               "- {} D Steps -- D Loss {:.2f} -- D Acc {:.2f} -"
-                              "-- {:.1f} Hours remaing...".format(its, max_its, g_steps, g_loss,  gen_acc, d_steps,
-                                                                  d_loss, d_acc, time_rem))
+                              "- {:.2f} D Success -- {:.1f} Hours remaing...".format(its, max_its, g_steps,
+                                                                                         g_loss,  gen_acc,
+                                                                                         d_steps, d_loss, d_acc,
+                                                                                         discr_success_rate, time_rem))
 
                         for idx in range(images.size(0)):
                             output_path = 'outputs/training/'.format(epoch)
