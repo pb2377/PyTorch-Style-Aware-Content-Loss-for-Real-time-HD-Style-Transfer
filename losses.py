@@ -75,6 +75,7 @@ class StyleAwareContentLoss(nn.Module):
     def __init__(self):
         super(StyleAwareContentLoss, self).__init__()
         self.loss = nn.L1Loss()
+        # self.loss = nn.MSELoss()
 
     def forward(self, x_inputs, gx_outputs):
         # abs euclidean distance between photo embedding and and stylized emb
@@ -88,3 +89,12 @@ class TransformedLoss(nn.Module):
 
     def forward(self, x_inputs, gx_outputs):
         return self.loss(x_inputs, gx_outputs)
+
+
+# class ReconcstructionLoss(nn.Module):
+#     def __init__(self):
+#         super(ReconcstructionLoss, self).__init__()
+#         self.loss = nn.MSELoss()
+#
+#     def forward(self, target, pred):
+#         return self.loss(target, pred)

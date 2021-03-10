@@ -184,10 +184,13 @@ def main():
                         d_loss += disc_loss(d_out_real_style, target_label=1)
                         d_loss += disc_loss(d_out_real_ph, target_label=0)
 
+                        # Step optimizer
                         d_loss.backward()
                         d_optimizer.step()
-                        discr_success_rate = discr_success_rate * (1. - alpha) + alpha * d_acc
                         d_steps += 1
+
+                        # Update success rate
+                        discr_success_rate = discr_success_rate * (1. - alpha) + alpha * d_acc
                     else:
                         # generator train step
                         # Generator discrim losses
@@ -202,17 +205,18 @@ def main():
                         g_loss = disc_wt * gen_loss(d_out_fake, target_label=1)
                         g_transf = trans_wt * transf_loss(transformed_inputs, transformed_outputs)
                         g_style = style_wt * style_aware_loss(emb, stylized_emb)
-                        print(g_loss.item(), g_transf.item(), g_style.item())
+                        # print(g_loss.item(), g_transf.item(), g_style.item())
                         g_loss += g_transf + g_style
+
+                        # STEP OPTIMIZER
                         g_loss.backward()
-                        d_optimizer.step()
-                        discr_success_rate = discr_success_rate * (1. - alpha) + alpha * (1. - gen_acc)
+                        g_optimizer.step()
                         g_steps += 1
 
-                        # print(gen_loss(d_out_fake, target_label=1), trans_wt * transf_loss(transformed_inputs, transformed_outputs),
-                        #       style_wt * style_aware_loss(emb, stylized_emb))
+                        # Update success rate
+                        discr_success_rate = discr_success_rate * (1. - alpha) + alpha * (1. - gen_acc)
 
-                    # print(g_loss.item(), g_steps, d_loss.item(), d_steps)
+                    # report stuff
                     t1 = process_time()
                     time_per_it.append((t1-t0)/3600)
                     if len(time_per_it) > 100:
