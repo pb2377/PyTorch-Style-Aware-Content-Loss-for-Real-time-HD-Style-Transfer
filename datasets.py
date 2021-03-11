@@ -58,7 +58,7 @@ class PlacesDataset(data.Dataset):
         style_image = self.resize_im(self.style_dataset.iterate())
         image = self.resize_im(Image.open(self.list_ids[idx]).convert('RGB'))
         # image = Image.open(self.list_ids[idx]).convert('RGB')
-        style_image = self.resize_im(self.normalize(self.transf(style_image)))
+        style_image = self.normalize(self.transf(style_image))
         image = self.normalize(self.transf(image))
         return image, style_image
 
