@@ -139,6 +139,7 @@ def main():
                 for images, style_images in dataloaders['train']:
                     t0 = process_time()
                     # utils.export_image(images[0, :, :, :], style_images[0, :, :, :], 'input_images.jpg')
+                    print(images.size(), style_images.size())
 
                     # zero gradients
                     g_optimizer.zero_grad()
@@ -158,6 +159,7 @@ def main():
 
                     # if training do losses etc
                     stylized_emb = encoder(stylized_im)
+                    print(emb.size(), stylized_im.size(), stylized_emb.size())
                     # add losses
 
                     # tblock
