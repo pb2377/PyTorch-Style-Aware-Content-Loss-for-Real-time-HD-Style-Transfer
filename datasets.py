@@ -58,7 +58,7 @@ class PlacesDataset(data.Dataset):
         style_image = self.resize_im(self.style_dataset.iterate())
         image = self.resize_im(Image.open(self.list_ids[idx]).convert('RGB'))
         # image = Image.open(self.list_ids[idx]).convert('RGB')
-        style_image = self.normalize(self.transf(style_image))
+        style_image = self.resize_im(self.normalize(self.transf(style_image)))
         image = self.normalize(self.transf(image))
         return image, style_image
 
@@ -69,9 +69,9 @@ class PlacesDataset(data.Dataset):
         return image
 
     def resize_im(self, image):
-        if max(image.size) > self.max_size:
-            sc = self.max_size / max(image.size)
-            image = image.resize((int(sc * image.size[0]), int(sc * image.size[1])), Image.BILINEAR)
+        # if max(image.size) > self.max_size:
+        #     sc = self.max_size / max(image.size)
+        #     image = image.resize((int(sc * image.size[0]), int(sc * image.size[1])), Image.BILINEAR)
 
         if min(image.size) < self.min_size:
             # Resize the smallest side of the image to 800px
