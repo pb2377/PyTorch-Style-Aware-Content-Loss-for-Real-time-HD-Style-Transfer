@@ -81,7 +81,9 @@ class Decoder(nn.Module):
         # self.tanh = nn.Tanh()
 
     def forward(self, x):
+        print(x.size())
         x = self.resblocks(x)
+        print(x.size())
         x = self.uplayers(x)
         x = self.conv7x7(x)
         x = 2 * self.sigm(x) - 1
