@@ -95,6 +95,7 @@ def main():
         save_dir = 'outputs-{}'.format(artist)
         if not os.path.exists(save_dir):
             os.mkdir(save_dir)
+        print('Saving weights and outputs to {}'.format(save_dir))
 
         style_data = datasets.StyleDataset(data_dir)
         num_workers = 8
