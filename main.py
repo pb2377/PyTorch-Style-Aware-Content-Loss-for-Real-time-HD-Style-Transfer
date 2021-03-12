@@ -89,7 +89,7 @@ def main():
             if artist in os.path.basename(item):
                 data_dir = item
                 break
-        print('Retrieving style examples from {} artwork from directory {}'.format(artist.upper(), artist_dir))
+        print('Retrieving style examples from {} artwork from directory {}'.format(artist.upper(), data_dir))
 
         save_dir = 'outputs-{}'.format(artist)
         if not os.path.exists(save_dir):
