@@ -87,6 +87,7 @@ class StyleDataset(object):
     def __init__(self, data_dir=None):
         # super(StyleDataset, self).__init__()
         assert data_dir is not None
+        print(data_dir)
         assert os.path.exists(data_dir)
         self.data_dir = data_dir
         self.list_ids = None
