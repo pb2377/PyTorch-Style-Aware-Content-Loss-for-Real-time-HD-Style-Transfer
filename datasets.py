@@ -112,13 +112,13 @@ class StyleDataset(object):
 
 
 class TestDataset(data.Dataset):
-    def __init__(self, image_dir='../Datasets/WikiArt-Sorted/data/sample_photographs'):
+    def __init__(self, image_dir='../Datasets/WikiArt-Sorted/data/sample_photographs', input_size=768):
         super(TestDataset, self).__init__()
         self.image_dir = image_dir
         assert os.path.join(self.image_dir)
         self.list_ids = None
         self.get_list_ids()
-        self.transf = transforms.Compose([#transforms.Resize(input_size),
+        self.transf = transforms.Compose([transforms.Resize(input_size),
                                           # transforms.CenterCrop(input_size),
                                           transforms.ToTensor(),
                                           ])

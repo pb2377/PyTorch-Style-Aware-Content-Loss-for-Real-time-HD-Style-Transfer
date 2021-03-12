@@ -9,7 +9,7 @@ from time import process_time
 
 
 def main():
-    train = True
+    train = False
     input_size = 768
     # input_size = 256  # set to none for default cropping
     dual_optim = False
@@ -266,8 +266,11 @@ def main():
 
         # encoder.load_state_dict(encoder_dict)
         # decoder.load_state_dict(decoder_dict)
+        if torch.cuda.is_available():
+            encoder = encoder.cuda()
+            decoder = decoder.cuda()
 
-        dataloader = DataLoader(datasets.TestDataset(),
+        dataloader = DataLoader(datasets.TestDataset(input_size=input_size),
                                 batch_size=1, shuffle=False, num_workers=8)
         evaluate(encoder, decoder, dataloader)
         raise NotImplementedError('Not implemented standalone ')
