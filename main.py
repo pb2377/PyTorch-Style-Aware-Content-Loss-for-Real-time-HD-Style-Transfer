@@ -87,9 +87,8 @@ def main():
         artist_dir = glob.glob('../Datasets/WikiArt-Sorted/data/*')
         for item in artist_dir:
             if artist in os.path.basename(item):
-                artist_dir = item
+                data_dir = item
                 break
-        data_dir = os.path.join('../Datasets/WikiArt-Sorted/data/', artist_dir)
         print('Retrieving style examples from {} artwork from directory {}'.format(artist.upper(), artist_dir))
 
         save_dir = 'outputs-{}'.format(artist)
