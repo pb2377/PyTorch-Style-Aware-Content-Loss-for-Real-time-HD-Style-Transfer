@@ -273,7 +273,7 @@ def main():
         dataloader = DataLoader(datasets.TestDataset(input_size=input_size),
                                 batch_size=1, shuffle=False, num_workers=8)
         evaluate(encoder, decoder, dataloader)
-        raise NotImplementedError('Not implemented standalone ')
+        # raise NotImplementedError('Not implemented standalone ')
 
 
 def evaluate(encoder, decoder, dataloader):

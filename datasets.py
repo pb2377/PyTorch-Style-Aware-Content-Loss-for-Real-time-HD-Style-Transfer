@@ -118,7 +118,7 @@ class TestDataset(data.Dataset):
         assert os.path.join(self.image_dir)
         self.list_ids = None
         self.get_list_ids()
-        self.transf = transforms.Compose([transforms.Resize(input_size),
+        self.transf = transforms.Compose([transforms.Resize(input_size*2),
                                           # transforms.CenterCrop(input_size),
                                           transforms.ToTensor(),
                                           ])
