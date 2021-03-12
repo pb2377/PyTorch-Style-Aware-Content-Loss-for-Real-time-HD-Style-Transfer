@@ -8,7 +8,7 @@ class ConvLayer(nn.Module):
         super(ConvLayer, self).__init__()
         reflection_padding = kernel_size // 2
         reflection_pad = torch.nn.ReflectionPad2d(reflection_padding)
-        padding = 0 if not pad else kernel_size // 2
+        padding = 0 if pad else kernel_size // 2
         conv = nn.Conv2d(in_channels, out_channels, kernel_size=kernel_size, stride=stride, bias=False, padding=padding)
         # conv = nn.Conv2d(in_channels, out_channels, kernel_size=kernel_size, stride=stride, bias=False,
         #                  padding_mode='reflect')
