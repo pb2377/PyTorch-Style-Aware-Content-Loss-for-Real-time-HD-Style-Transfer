@@ -4,11 +4,12 @@ import torch.nn.functional as F
 
 
 class ConvLayer(nn.Module):
-    def __init__(self, in_channels, out_channels, kernel_size, stride, relu=True, pad=True):
+    def __init__(self, in_channels, out_channels, kernel_size, stride, relu=True, pad=False):
         super(ConvLayer, self).__init__()
         reflection_padding = kernel_size // 2
         reflection_pad = torch.nn.ReflectionPad2d(reflection_padding)
-        conv = nn.Conv2d(in_channels, out_channels, kernel_size=kernel_size, stride=stride, bias=False)
+        padding = 0 if not pad else kernel_size // 2
+        conv = nn.Conv2d(in_channels, out_channels, kernel_size=kernel_size, stride=stride, bias=False, padding=padding)
         # conv = nn.Conv2d(in_channels, out_channels, kernel_size=kernel_size, stride=stride, bias=False,
         #                  padding_mode='reflect')
         instn = nn.InstanceNorm2d(out_channels,  affine=True)  #, track_running_stats=True)

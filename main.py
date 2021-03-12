@@ -7,9 +7,11 @@ import datasets
 from torch.utils.data import DataLoader
 from time import process_time
 
+artist_list = {'vangogh': [],
+               'cezanne': []}
 
 def main():
-    train = False
+    train = True
     input_size = 768
     # input_size = 256  # set to none for default cropping
     dual_optim = False
