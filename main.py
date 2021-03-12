@@ -1,4 +1,5 @@
 import os
+import glob
 import torch
 import models
 import utils
@@ -7,12 +8,14 @@ import datasets
 from torch.utils.data import DataLoader
 from time import process_time
 
-artist_list = {'vangogh': [],
-               'cezanne': []}
+artist_list = ['van-gogh', 'cezanne', 'picasso', 'guaguin', 'kandisky', 'monet']
+
 
 def main():
     train = True
     input_size = 768
+    artist = 'van-gogh'
+    assert artist in artist_list
     # input_size = 256  # set to none for default cropping
     dual_optim = False
     print("Training with Places365 Dataset")
@@ -81,8 +84,18 @@ def main():
         #         params_to_update.append(param)
         # # optimizer = torch.optim.Adam(params_to_update, lr=lr)
 
-        data_dir = '../Datasets/WikiArt-Sorted/data/vincent-van-gogh_road-with-cypresses-1890'
-        # data_dir = '../Datasets/WikiArt-Sorted/data/edvard-munch/'
+        artist_dir = glob.glob('../Datasets/WikiArt-Sorted/data/*')
+        for item in artist_dir:
+            if artist in os.path.basename(item):
+                artist_dir = item
+                break
+        data_dir = os.path.join('../Datasets/WikiArt-Sorted/data/', artist_dir)
+        print('Retrieving style examples from {} artwork from directory {}'.format(artist.upper(), artist_dir))
+
+        save_dir = 'outputs-{}'.format(artist)
+        if not os.path.exists(save_dir):
+            os.mkdir(save_dir)
+
         style_data = datasets.StyleDataset(data_dir)
         num_workers = 8
         # if mpii:
@@ -236,7 +249,7 @@ def main():
                                                                                          discr_success_rate, time_rem))
 
                         for idx in range(images.size(0)):
-                            output_path = 'outputs/training/'.format(epoch)
+                            output_path = os.path.join(save_dir, 'training_visualise')
                             if not os.path.exists(output_path):
                                 os.makedirs(output_path)
 
@@ -256,12 +269,12 @@ def main():
                         torch.save(discrim, "tmp/discriminator.pt")
 
         # only save if running on gpu (otherwise I'm just fixing bugs)
-        torch.save(encoder, "encoder.pt")
-        torch.save(decoder, "decoder.pt")
-        torch.save(tblock, "tblock.pt")
-        torch.save(discrim, "discriminator.pt")
+        torch.save(encoder, os.path.join(save_dir, "encoder.pt"))
+        torch.save(decoder, os.path.join(save_dir, "decoder.pt"))
+        torch.save(tblock, os.path.join(save_dir, "tblock.pt"))
+        torch.save(discrim, os.path.join(save_dir, "discriminator.pt"))
 
-        evaluate(encoder, decoder, dataloaders['test'])
+        evaluate(encoder, decoder, dataloaders['test'], save_dir=save_dir)
     else:
         encoder = torch.load('encoder.pt', map_location='cpu')
         decoder = torch.load('decoder.pt', map_location='cpu')
@@ -274,11 +287,11 @@ def main():
 
         dataloader = DataLoader(datasets.TestDataset(input_size=input_size),
                                 batch_size=1, shuffle=False, num_workers=8)
-        evaluate(encoder, decoder, dataloader)
+        evaluate(encoder, decoder, dataloader, save_dir=save_dir)
         # raise NotImplementedError('Not implemented standalone ')
 
 
-def evaluate(encoder, decoder, dataloader):
+def evaluate(encoder, decoder, dataloader, save_dir):
     encoder.eval()
     decoder.eval()
     image_id = 0
@@ -296,11 +309,11 @@ def evaluate(encoder, decoder, dataloader):
         # save out 5 example images
         print('Image 1')
         for idx in range(images.size(0)):
-            output_path = 'final_outputs/'
+            output_path = os.path.join(save_dir, 'final_outputs')
             if not os.path.exists(output_path):
                 os.makedirs(output_path)
 
-            output_path += 'Example_{}.jpg'.format(image_id)
+            output_path = os.path.join(output_path, 'Example_{}.jpg'.format(image_id))
             image_id += 1
             utils.export_image([images[idx, :, :, :], stylized_im[idx, :, :, :]],
                                output_path)
