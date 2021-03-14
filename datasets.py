@@ -6,17 +6,22 @@ from PIL import Image
 from random import shuffle
 import json
 
+TRAIN_TRANSFORMS = [transforms.RandomAffine(degrees=15, shear=0.05, scale=(0.9, 1.1)),
+                    # transforms.RandomResizedCrop(crop_size, scale=(0.8, 1.2)), # ratio=(1., 1.)),
+                    transforms.ColorJitter(brightness=0.05, contrast=0.05, saturation=0.05, hue=0.05),
+                    transforms.RandomHorizontalFlip()
+                    # transforms.RandomVerticalFlip()
+                    ]
+
 
 class PlacesDataset(data.Dataset):
-    def __init__(self, train=True, input_size=768, style_dataset=None):
+    def __init__(self, train=True, input_size=768):
         super(PlacesDataset, self).__init__()
         """Initialisation"""
         dataset_dir = '../Datasets/Places365/'
-        # if input_size > 256:
-        if True:
-            data_dir = 'data_large'
-            self.min_size = 800.
-            self.max_size = 1800.
+        data_dir = 'data_large'
+        self.min_size = 800.
+        self.max_size = 1800.
         # else:
         #     data_dir = 'data_256'
         #     self.min_size = 300.
@@ -25,26 +30,17 @@ class PlacesDataset(data.Dataset):
             # print('Cannot Use Original Images, upscaling 256x256 to 768x768')
             # raise NotImplementedError('Only implemented 256x256 dataset')
         self.train = train
-        if self.train:
-            assert style_dataset is not None
-        self.style_dataset = style_dataset
         self.image_dirs = os.path.join(dataset_dir, data_dir)
         self.list_ids = self.get_list_ids()
+        # print('WARNING USING PALCEHOLDER  data in train loader!!!')
+        # self.list_ids = glob.glob('../Datasets/WikiArt-Sorted/data/vincent-van-gogh_road-with-cypresses-1890/*')
 
         if train:
-            self.transf = transforms.Compose([
-                                              transforms.RandomAffine(degrees=15, shear=0.05, scale=(0.9, 1.1)),
-                                              transforms.RandomCrop(input_size),
-                                              # transforms.RandomResizedCrop(crop_size, scale=(0.8, 1.2)), # ratio=(1., 1.)),
-                                              transforms.ColorJitter(brightness=0.05, contrast=0.05, saturation=0.05, hue=0.05),
-                                              transforms.RandomHorizontalFlip(), #transforms.RandomVerticalFlip(),
-                                              transforms.ToTensor(),
-                                              ])
+            transf = TRAIN_TRANSFORMS.copy()
+            transf.extend([transforms.RandomCrop(input_size), transforms.ToTensor()])
+            self.transf = transforms.Compose(transf)
         else:
-            self.transf = transforms.Compose([# transforms.Resize(input_size),
-                                              # transforms.CenterCrop(input_size),
-                                              transforms.ToTensor(),
-                                              ])
+            raise NotImplementedError
 
     def get_list_ids(self):
         list_ids = glob.glob(os.path.join(self.image_dirs, '*', '*', '*'))
@@ -55,12 +51,9 @@ class PlacesDataset(data.Dataset):
         return len(self.list_ids)
 
     def __getitem__(self, idx):
-        style_image = self.resize_im(self.style_dataset.iterate())
         image = self.resize_im(Image.open(self.list_ids[idx]).convert('RGB'))
-        # image = Image.open(self.list_ids[idx]).convert('RGB')
-        style_image = self.normalize(self.transf(style_image))
         image = self.normalize(self.transf(image))
-        return image, style_image
+        return image
 
     @staticmethod
     def normalize(image):
@@ -69,7 +62,7 @@ class PlacesDataset(data.Dataset):
         return image
 
     def resize_im(self, image):
-        if max(image.selfize) > self.max_size:
+        if max(image.size) > self.max_size:
             sc = self.max_size / max(image.size)
             image = image.resize((int(sc * image.size[0]), int(sc * image.size[1])), Image.BILINEAR)
 
@@ -83,32 +76,52 @@ class PlacesDataset(data.Dataset):
         return image
 
 
-class StyleDataset(object):
-    def __init__(self, data_dir=None):
-        # super(StyleDataset, self).__init__()
+class StyleDataset(data.Dataset):
+    def __init__(self, data_dir=None, input_size=768):
+        super(StyleDataset, self).__init__()
         assert data_dir is not None
-        # print(data_dir)
         assert os.path.exists(data_dir)
         self.data_dir = data_dir
-        self.list_ids = None
-        self.iter_ids = None
         self.get_list_ids()
-        self.shuffle_ids()
+
+        transf = TRAIN_TRANSFORMS.copy()
+        transf.extend([transforms.RandomCrop(input_size), transforms.ToTensor()])
+        self.transf = transforms.Compose(transf)
+
+        self.min_size = 800.
+        self.max_size = 1800.
+
+    def __len__(self):
+        return len(self.list_ids)
+
+    def __getitem__(self, idx):
+        image = self.resize_im(Image.open(self.list_ids[idx]).convert('RGB'))
+        image = self.normalize(self.transf(image))
+        return image
 
     def get_list_ids(self):
         list_ids = glob.glob(os.path.join(self.data_dir, '*'))
         list_ids = [i for i in list_ids if '.jpg' in i or '.png' in i]
         self.list_ids = list_ids
 
-    def shuffle_ids(self):
-        self.iter_ids = [i for i in range(len(self.list_ids))]
-        shuffle(self.iter_ids)
+    @staticmethod
+    def normalize(image):
+        image *= 2.
+        image -= 1.
+        return image
 
-    def iterate(self):
-        if len(self.iter_ids) < 1:
-            self.shuffle_ids()
-        idx = self.iter_ids.pop(0)
-        image = Image.open(self.list_ids[idx]).convert('RGB')
+    def resize_im(self, image):
+        if max(image.size) > self.max_size:
+            sc = self.max_size / max(image.size)
+            image = image.resize((int(sc * image.size[0]), int(sc * image.size[1])), Image.BILINEAR)
+
+        if min(image.size) < self.min_size:
+            # Resize the smallest side of the image to 800px
+            sc = self.min_size / float(min(image.size))
+            if sc < 4.:
+                image = image.resize((int(sc * image.size[0]), int(sc * image.size[1])), Image.BILINEAR)
+            else:
+                image = image.resize((int(self.min_size), int(self.min_size)), Image.BILINEAR)
         return image
 
 
@@ -119,7 +132,7 @@ class TestDataset(data.Dataset):
         assert os.path.join(self.image_dir)
         self.list_ids = None
         self.get_list_ids()
-        self.transf = transforms.Compose([transforms.Resize(int(input_size * 2)),
+        self.transf = transforms.Compose([# transforms.Resize(int(input_size * 2)),
                                           # transforms.CenterCrop(input_size),
                                           transforms.ToTensor(),
                                           ])

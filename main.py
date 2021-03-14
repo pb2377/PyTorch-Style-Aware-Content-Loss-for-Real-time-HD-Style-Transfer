@@ -7,12 +7,13 @@ import losses
 import datasets
 from torch.utils.data import DataLoader
 from time import process_time
+from itertools import cycle
 
 artist_list = ['van-gogh', 'cezanne', 'picasso', 'guaguin', 'kandisky', 'monet']
 
 
 def main():
-    train = False
+    train = True
     input_size = 768
     artist = 'cezanne'
     assert artist in artist_list
@@ -104,8 +105,9 @@ def main():
         #                    'test': DataLoader(datasets.MpiiDataset(train=False, style_dataset=style_data, input_size=input_size),
         #                                       batch_size=1, shuffle=False, num_workers=num_workers)}
         # else:
-        dataloaders = {'train': DataLoader(datasets.PlacesDataset(train=True, input_size=input_size,
-                                                                  style_dataset=style_data),
+        dataloaders = {'train': DataLoader(datasets.PlacesDataset(train=True, input_size=input_size),
+                                           batch_size=batch_size, shuffle=True, num_workers=num_workers),
+                       'style': DataLoader(datasets.StyleDataset(data_dir=data_dir, input_size=input_size),
                                            batch_size=batch_size, shuffle=True, num_workers=num_workers),
                        'test': DataLoader(datasets.TestDataset(),
                                           batch_size=1, shuffle=False, num_workers=num_workers)}
@@ -150,7 +152,7 @@ def main():
         for epoch in range(max_eps):
                 if its > max_its:
                     break
-                for images, style_images in dataloaders['train']:
+                for images, style_images in zip(dataloaders['train'], cycle(dataloaders['style'])):
                     t0 = process_time()
                     # utils.export_image(images[0, :, :, :], style_images[0, :, :, :], 'input_images.jpg')
 
