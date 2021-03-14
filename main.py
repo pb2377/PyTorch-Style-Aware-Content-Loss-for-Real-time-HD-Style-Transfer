@@ -262,12 +262,12 @@ def main():
                     scheduler_d.step()
 
                     if not its % 10000:
-                        if not os.path.exists('tmp'):
-                            os.mkdir('tmp')
-                        torch.save(encoder, "tmp/encoder.pt")
-                        torch.save(decoder, "tmp/decoder.pt")
-                        torch.save(tblock, "tmp/tblock.pt")
-                        torch.save(discrim, "tmp/discriminator.pt")
+                        if not os.path.exists(save_dir):
+                            os.mkdir(save_dir)
+                        torch.save(encoder, save_dir + "/encoder.pt")
+                        torch.save(decoder, save_dir + "/decoder.pt")
+                        torch.save(tblock, save_dir + "/tblock.pt")
+                        torch.save(discrim, save_dir + "/discriminator.pt")
 
         # only save if running on gpu (otherwise I'm just fixing bugs)
         torch.save(encoder, os.path.join(save_dir, "encoder.pt"))
