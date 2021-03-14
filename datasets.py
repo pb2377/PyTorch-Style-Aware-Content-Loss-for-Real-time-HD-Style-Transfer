@@ -33,7 +33,7 @@ class PlacesDataset(data.Dataset):
 
         if train:
             self.transf = transforms.Compose([
-                                              # transforms.RandomAffine(degrees=15, shear=0.05),
+                                              transforms.RandomAffine(degrees=15, shear=0.05, scale=(0.9, 1.1)),
                                               transforms.RandomCrop(input_size),
                                               # transforms.RandomResizedCrop(crop_size, scale=(0.8, 1.2)), # ratio=(1., 1.)),
                                               transforms.ColorJitter(brightness=0.05, contrast=0.05, saturation=0.05, hue=0.05),
@@ -69,9 +69,9 @@ class PlacesDataset(data.Dataset):
         return image
 
     def resize_im(self, image):
-        # if max(image.size) > self.max_size:
-        #     sc = self.max_size / max(image.size)
-        #     image = image.resize((int(sc * image.size[0]), int(sc * image.size[1])), Image.BILINEAR)
+        if max(image.selfize) > self.max_size:
+            sc = self.max_size / max(image.size)
+            image = image.resize((int(sc * image.size[0]), int(sc * image.size[1])), Image.BILINEAR)
 
         if min(image.size) < self.min_size:
             # Resize the smallest side of the image to 800px
@@ -119,21 +119,21 @@ class TestDataset(data.Dataset):
         assert os.path.join(self.image_dir)
         self.list_ids = None
         self.get_list_ids()
-        self.transf = transforms.Compose([transforms.Resize(int(input_size*2)),
+        self.transf = transforms.Compose([transforms.Resize(int(input_size * 2)),
                                           # transforms.CenterCrop(input_size),
                                           transforms.ToTensor(),
                                           ])
 
     def get_list_ids(self):
         list_ids = glob.glob(os.path.join(self.image_dir, '*'))
-        list_ids = [i for i in list_ids if '.jpg' in i or '.png' in i]
+        list_ids = sorted([i for i in list_ids if '.jpg' in i or '.png' in i])
         self.list_ids = list_ids
 
     def __len__(self):
         return len(self.list_ids)
 
     def __getitem__(self, idx):
-        image = Image.open(self.list_ids[idx])
+        image = Image.open(self.list_ids[idx]).convert('RGB')
         image = self.normalize(self.transf(image))
         return image
 

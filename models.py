@@ -56,7 +56,7 @@ class Decoder(nn.Module):
     def __init__(self):
         super(Decoder, self).__init__()
         resblocks = []
-        output_bias = False
+        output_bias = True
         in_channels = 256
         out_channels = 256
         kernel_size = 3
@@ -91,7 +91,7 @@ class Decoder(nn.Module):
 class Discriminator(nn.Module):
     def __init__(self):
         super(Discriminator, self).__init__()
-        classifier_bias = False
+        classifier_bias = True
         kernel_size = 5
         stride = 2
         leak = 0.2

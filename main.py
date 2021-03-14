@@ -12,9 +12,9 @@ artist_list = ['van-gogh', 'cezanne', 'picasso', 'guaguin', 'kandisky', 'monet']
 
 
 def main():
-    train = True
+    train = False
     input_size = 768
-    artist = 'van-gogh'
+    artist = 'cezanne'
     assert artist in artist_list
     # input_size = 256  # set to none for default cropping
     dual_optim = False
@@ -59,6 +59,18 @@ def main():
         tblock = tblock.cuda()
         discrim = discrim.cuda()
 
+    artist_dir = glob.glob('../Datasets/WikiArt-Sorted/data/*')
+    for item in artist_dir:
+        if artist in os.path.basename(item):
+            data_dir = item
+            break
+    print('Retrieving style examples from {} artwork from directory {}'.format(artist.upper(), data_dir))
+
+    save_dir = 'outputs-{}'.format(artist)
+    if not os.path.exists(save_dir):
+        os.mkdir(save_dir)
+    print('Saving weights and outputs to {}'.format(save_dir))
+
     if train:
         # load tmp weights
         if os.path.exists('tmp'):
@@ -83,19 +95,6 @@ def main():
         #         param.requires_grad = True
         #         params_to_update.append(param)
         # # optimizer = torch.optim.Adam(params_to_update, lr=lr)
-
-        artist_dir = glob.glob('../Datasets/WikiArt-Sorted/data/*')
-        for item in artist_dir:
-            if artist in os.path.basename(item):
-                data_dir = item
-                break
-        print('Retrieving style examples from {} artwork from directory {}'.format(artist.upper(), data_dir))
-
-        save_dir = 'outputs-{}'.format(artist)
-        if not os.path.exists(save_dir):
-            os.mkdir(save_dir)
-        print('Saving weights and outputs to {}'.format(save_dir))
-
         style_data = datasets.StyleDataset(data_dir)
         num_workers = 8
         # if mpii:
@@ -253,7 +252,7 @@ def main():
                             if not os.path.exists(output_path):
                                 os.makedirs(output_path)
 
-                            output_path += 'iteration_{:06d}_example_{}.jpg'.format(its, idx)
+                            output_path = os.path.join(output_path, 'iteration_{:06d}_example_{}.jpg'.format(its, idx))
                             utils.export_image([images[idx, :, :, :], style_images[idx, :, :, :], stylized_im[idx, :, :, :]], output_path)
 
                     its += 1
@@ -276,8 +275,9 @@ def main():
 
         evaluate(encoder, decoder, dataloaders['test'], save_dir=save_dir)
     else:
-        encoder = torch.load('encoder.pt', map_location='cpu')
-        decoder = torch.load('decoder.pt', map_location='cpu')
+        print('Loading Models {} and {}'.format(os.path.join(save_dir, "encoder.pt"), os.path.join(save_dir, "decoder.pt")))
+        encoder = torch.load(os.path.join(save_dir, "encoder.pt"), map_location='cpu')
+        decoder = torch.load(os.path.join(save_dir, "decoder.pt"), map_location='cpu')
 
         # encoder.load_state_dict(encoder_dict)
         # decoder.load_state_dict(decoder_dict)
@@ -296,29 +296,30 @@ def evaluate(encoder, decoder, dataloader, save_dir):
     decoder.eval()
     image_id = 0
     for images in dataloader:
-        # raise NotImplementedError
-        if torch.cuda.is_available():
-            images = images.cuda()
-            # if style_images is not None:
-            #     style_images = style_images.cuda()
+        # if True:
+        if image_id in [18, 20, 25]: #[12, 17, 25]:
+            # raise NotImplementedError
+            if torch.cuda.is_available():
+                images = images.cuda()
+                # if style_images is not None:
+                #     style_images = style_images.cuda()
 
-        # autoencoder
-        emb = encoder(images)
-        stylized_im = decoder(emb)
+            # autoencoder
+            emb = encoder(images)
+            stylized_im = decoder(emb)
 
-        # save out 5 example images
-        print('Image 1')
-        for idx in range(images.size(0)):
-            output_path = os.path.join(save_dir, 'final_outputs')
-            if not os.path.exists(output_path):
-                os.makedirs(output_path)
+            # save out 5 example images
+            for idx in range(images.size(0)):
+                output_path = os.path.join(save_dir, 'final_outputs')
+                if not os.path.exists(output_path):
+                    os.makedirs(output_path)
 
-            output_path = os.path.join(output_path, 'Example_{}.jpg'.format(image_id))
-            image_id += 1
-            utils.export_image([images[idx, :, :, :], stylized_im[idx, :, :, :]],
-                               output_path)
-            # raise NotImplementedError("Not implemented test phase.")
-
+                output_path = os.path.join(output_path, 'Example_{}.jpg'.format(image_id))
+                utils.export_image([images[idx, :, :, :], stylized_im[idx, :, :, :]],
+                                   output_path)
+                # raise NotImplementedError("Not implemented test phase.")
+                print('Image {}/{}'.format(image_id+1,  len(dataloader.dataset)+1))
+        image_id += 1
 
 if __name__ == '__main__':
     main()

@@ -4,7 +4,7 @@ import torch.nn.functional as F
 
 
 class ConvLayer(nn.Module):
-    def __init__(self, in_channels, out_channels, kernel_size, stride, relu=True, pad=False):
+    def __init__(self, in_channels, out_channels, kernel_size, stride, relu=True, pad=True):
         super(ConvLayer, self).__init__()
         reflection_padding = kernel_size // 2
         reflection_pad = torch.nn.ReflectionPad2d(reflection_padding)
@@ -69,7 +69,7 @@ class ResidualBlock(nn.Module):
 class UpConvBlock(nn.Module):
     def __init__(self, in_channels, out_channels, kernel_size, stride, relu=True):
         super(UpConvBlock, self).__init__()
-        self.block = ConvLayer(in_channels, out_channels, kernel_size, stride, relu=relu, pad=False)
+        self.block = ConvLayer(in_channels, out_channels, kernel_size, stride, relu=relu)
 
     def forward(self, x):
         return self.block(F.interpolate(x, scale_factor=2, mode='nearest'))
