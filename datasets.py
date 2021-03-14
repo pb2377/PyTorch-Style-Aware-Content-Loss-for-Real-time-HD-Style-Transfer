@@ -22,18 +22,12 @@ class PlacesDataset(data.Dataset):
         data_dir = 'data_large'
         self.min_size = 800.
         self.max_size = 1800.
-        # else:
-        #     data_dir = 'data_256'
-        #     self.min_size = 300.
-        #     self.max_size = 1000.
 
-            # print('Cannot Use Original Images, upscaling 256x256 to 768x768')
-            # raise NotImplementedError('Only implemented 256x256 dataset')
         self.train = train
         self.image_dirs = os.path.join(dataset_dir, data_dir)
         self.list_ids = self.get_list_ids()
-        # print('WARNING USING PALCEHOLDER  data in train loader!!!')
-        # self.list_ids = glob.glob('../Datasets/WikiArt-Sorted/data/vincent-van-gogh_road-with-cypresses-1890/*')
+        print('WARNING USING PALCEHOLDER  data in train loader!!!')
+        self.list_ids = glob.glob('../Datasets/WikiArt-Sorted/data/vincent-van-gogh_road-with-cypresses-1890/*')
 
         if train:
             transf = TRAIN_TRANSFORMS.copy()
@@ -51,28 +45,8 @@ class PlacesDataset(data.Dataset):
         return len(self.list_ids)
 
     def __getitem__(self, idx):
-        image = self.resize_im(Image.open(self.list_ids[idx]).convert('RGB'))
-        image = self.normalize(self.transf(image))
-        return image
-
-    @staticmethod
-    def normalize(image):
-        image *= 2.
-        image -= 1.
-        return image
-
-    def resize_im(self, image):
-        if max(image.size) > self.max_size:
-            sc = self.max_size / max(image.size)
-            image = image.resize((int(sc * image.size[0]), int(sc * image.size[1])), Image.BILINEAR)
-
-        if min(image.size) < self.min_size:
-            # Resize the smallest side of the image to 800px
-            sc = self.min_size / float(min(image.size))
-            if sc < 4.:
-                image = image.resize((int(sc * image.size[0]), int(sc * image.size[1])), Image.BILINEAR)
-            else:
-                image = image.resize((int(self.min_size), int(self.min_size)), Image.BILINEAR)
+        image = resize_im(Image.open(self.list_ids[idx]).convert('RGB'), self.min_size, self.max_size)
+        image = normalize(self.transf(image))
         return image
 
 
@@ -95,34 +69,14 @@ class StyleDataset(data.Dataset):
         return len(self.list_ids)
 
     def __getitem__(self, idx):
-        image = self.resize_im(Image.open(self.list_ids[idx]).convert('RGB'))
-        image = self.normalize(self.transf(image))
+        image = resize_im(Image.open(self.list_ids[idx]).convert('RGB'), self.min_size, self.max_size)
+        image = normalize(self.transf(image))
         return image
 
     def get_list_ids(self):
         list_ids = glob.glob(os.path.join(self.data_dir, '*'))
         list_ids = [i for i in list_ids if '.jpg' in i or '.png' in i]
         self.list_ids = list_ids
-
-    @staticmethod
-    def normalize(image):
-        image *= 2.
-        image -= 1.
-        return image
-
-    def resize_im(self, image):
-        if max(image.size) > self.max_size:
-            sc = self.max_size / max(image.size)
-            image = image.resize((int(sc * image.size[0]), int(sc * image.size[1])), Image.BILINEAR)
-
-        if min(image.size) < self.min_size:
-            # Resize the smallest side of the image to 800px
-            sc = self.min_size / float(min(image.size))
-            if sc < 4.:
-                image = image.resize((int(sc * image.size[0]), int(sc * image.size[1])), Image.BILINEAR)
-            else:
-                image = image.resize((int(self.min_size), int(self.min_size)), Image.BILINEAR)
-        return image
 
 
 class TestDataset(data.Dataset):
@@ -147,14 +101,29 @@ class TestDataset(data.Dataset):
 
     def __getitem__(self, idx):
         image = Image.open(self.list_ids[idx]).convert('RGB')
-        image = self.normalize(self.transf(image))
+        image = normalize(self.transf(image))
         return image
 
-    @staticmethod
-    def normalize(image):
-        image *= 2.
-        image -= 1.
-        return image
+
+def normalize(image):
+    image *= 2.
+    image -= 1.
+    return image
+
+
+def resize_im(image, min_size, max_size):
+    if max(image.size) > max_size:
+        sc = max_size / max(image.size)
+        image = image.resize((int(sc * image.size[0]), int(sc * image.size[1])), Image.BILINEAR)
+
+    if min(image.size) < min_size:
+        # Resize the smallest side of the image to 800px
+        sc = min_size / float(min(image.size))
+        if sc < 4.:
+            image = image.resize((int(sc * image.size[0]), int(sc * image.size[1])), Image.BILINEAR)
+        else:
+            image = image.resize((int(min_size), int(min_size)), Image.BILINEAR)
+    return image
 
 
 class MpiiDataset(data.Dataset):

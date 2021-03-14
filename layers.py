@@ -4,28 +4,30 @@ import torch.nn.functional as F
 
 
 class ConvLayer(nn.Module):
-    def __init__(self, in_channels, out_channels, kernel_size, stride, relu=True, pad=True):
+    def __init__(self, in_channels, out_channels, kernel_size, stride, relu=True, pad='SAME'):
         super(ConvLayer, self).__init__()
+        assert pad in ['SAME', 'VALID', 'REFLECT']
         reflection_padding = kernel_size // 2
         reflection_pad = torch.nn.ReflectionPad2d(reflection_padding)
-        padding = 0 if pad else kernel_size // 2
+        if pad == 'VALID' or pad == 'REFLECT':
+            padding = 0
+        elif pad == 'SAME':
+            padding = kernel_size // 2
+
         conv = nn.Conv2d(in_channels, out_channels, kernel_size=kernel_size, stride=stride, bias=False, padding=padding)
-        # conv = nn.Conv2d(in_channels, out_channels, kernel_size=kernel_size, stride=stride, bias=False,
-        #                  padding_mode='reflect')
         instn = nn.InstanceNorm2d(out_channels,  affine=True)  #, track_running_stats=True)
 
-        # if relu:
-        #     self.layer = nn.Sequential(*(reflection_pad, conv, instn, nn.ReLU()))
-        # else:
-        #     self.layer = nn.Sequential(*(reflection_pad, conv, instn))
-        if relu and pad:
+        if relu and pad == 'REFLECT':
             self.layer = nn.Sequential(*(reflection_pad, conv, instn, nn.ReLU()))
-        elif relu and not pad:
-            self.layer = nn.Sequential(*(conv, instn, nn.ReLU()))
-        elif not relu and pad:
+        elif pad == 'REFLECT' and not relu:
             self.layer = nn.Sequential(*(reflection_pad, conv, instn))
-        elif not relu and not pad:
+        elif relu:
+            self.layer = nn.Sequential(*(conv, instn, nn.ReLU()))
+        elif not relu:
             self.layer = nn.Sequential(*(conv, instn))
+        else:
+            print(relu, pad)
+            raise NotImplementedError
 
     def forward(self, x):
         return self.layer(x)
@@ -36,9 +38,8 @@ class LeakyLayer(nn.Module):
         super(LeakyLayer, self).__init__()
         # reflection_padding = kernel_size // 2
         # reflection_pad = torch.nn.ReflectionPad2d(reflection_padding)
-        conv = nn.Conv2d(in_channels, out_channels, kernel_size=kernel_size, stride=stride, bias=False)
-        # conv = nn.Conv2d(in_channels, out_channels, kernel_size=kernel_size, stride=stride, bias=False,
-        #                  padding_mode='reflect')
+        conv = nn.Conv2d(in_channels, out_channels, kernel_size=kernel_size, stride=stride, bias=False,
+                         padding=kernel_size // 2)
         instn = nn.InstanceNorm2d(out_channels,  affine=True)  #, track_running_stats=True)
         relu = nn.LeakyReLU(leak)
 
@@ -55,7 +56,7 @@ class ResidualBlock(nn.Module):
         block = []
         relu = True
         for _ in range(2):
-            block.append(ConvLayer(in_channels, out_channels, kernel_size, stride, relu=relu, pad=True))
+            block.append(ConvLayer(in_channels, out_channels, kernel_size, stride, relu=relu, pad='REFLECT'))
             relu = False
         self.block = nn.Sequential(*block)
 
@@ -69,7 +70,7 @@ class ResidualBlock(nn.Module):
 class UpConvBlock(nn.Module):
     def __init__(self, in_channels, out_channels, kernel_size, stride, relu=True):
         super(UpConvBlock, self).__init__()
-        self.block = ConvLayer(in_channels, out_channels, kernel_size, stride, relu=relu)
+        self.block = ConvLayer(in_channels, out_channels, kernel_size, stride, relu=relu, pad='SAME')
 
     def forward(self, x):
         return self.block(F.interpolate(x, scale_factor=2, mode='nearest'))

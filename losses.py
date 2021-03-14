@@ -74,7 +74,7 @@ class SoftmaxLoss(nn.Module):
 class StyleAwareContentLoss(nn.Module):
     def __init__(self):
         super(StyleAwareContentLoss, self).__init__()
-        self.loss = nn.L1Loss()
+        self.loss = nn.L1Loss(reduction='mean')
         # self.loss = nn.MSELoss()
 
     def forward(self, x_inputs, gx_outputs):
@@ -85,7 +85,7 @@ class StyleAwareContentLoss(nn.Module):
 class TransformedLoss(nn.Module):
     def __init__(self):
         super(TransformedLoss, self).__init__()
-        self.loss = nn.MSELoss()
+        self.loss = nn.MSELoss(reduction='mean')
 
     def forward(self, x_inputs, gx_outputs):
         return self.loss(x_inputs, gx_outputs)

@@ -30,10 +30,6 @@ def init_weights(net):
             init.normal_(m.weight.data, mu, stddev)
             if hasattr(m, 'bias'):
                 init.constant_(m.bias.data, 0.0)
-        # else:
-            # print(m)
-            # raise NotImplementedError
-
     net.apply(init_func)
 
 
@@ -41,11 +37,13 @@ class Encoder(nn.Module):
     def __init__(self, in_channels=3):
         super(Encoder, self).__init__()
         layers = [nn.InstanceNorm2d(in_channels, affine=True)]
+        layers.append(torch.nn.ReflectionPad2d(15))
         layer_spec = [[3, 32, 3, 1], [32, 32, 3, 2], [32, 64, 3, 2], [64, 128, 3, 2], [128, 256, 3, 2]]
+        pad = True
         for spec in layer_spec:
             in_channels, out_channels, kernel_size, stride = spec
             layers.append(L.ConvLayer(in_channels=in_channels, out_channels=out_channels,
-                                      kernel_size=kernel_size, stride=stride))
+                                      kernel_size=kernel_size, stride=stride, pad='VALID'))
         self.layers = nn.Sequential(*layers)
 
     def forward(self, x):
@@ -76,7 +74,7 @@ class Decoder(nn.Module):
         kernel_size = 7
         self.conv7x7 = nn.Sequential(nn.ReflectionPad2d(kernel_size // 2),
                                      nn.Conv2d(in_channels=32, out_channels=3, kernel_size=kernel_size, stride=1,
-                                               bias=output_bias))
+                                               bias=output_bias, padding=0))
         self.sigm = nn.Sigmoid()
         # self.tanh = nn.Tanh()
 

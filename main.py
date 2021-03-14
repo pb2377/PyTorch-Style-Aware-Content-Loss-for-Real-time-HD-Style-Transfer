@@ -175,12 +175,6 @@ def main():
                     # if training do losses etc
                     stylized_emb = encoder(stylized_im)
 
-                    # add losses
-
-                    # tblock
-                    transformed_inputs, transformed_outputs = tblock(images, stylized_im)
-                    # add loss
-
                     if discr_success_rate < win_rate:
                         # discriminator train step
                         # discriminator
@@ -219,6 +213,9 @@ def main():
                         gen_acc = utils.accuracy(d_out_fake, target_label=1)  # accuracy given only the output image
 
                         del g_loss
+                        # tblock
+                        transformed_inputs, transformed_outputs = tblock(images, stylized_im)
+
                         g_loss = disc_wt * gen_loss(d_out_fake, target_label=1)
                         g_transf = trans_wt * transf_loss(transformed_inputs, transformed_outputs)
                         g_style = style_wt * style_aware_loss(emb, stylized_emb)
