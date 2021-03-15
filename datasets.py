@@ -26,8 +26,8 @@ class PlacesDataset(data.Dataset):
         self.train = train
         self.image_dirs = os.path.join(dataset_dir, data_dir)
         self.list_ids = self.get_list_ids()
-        print('WARNING USING PALCEHOLDER  data in train loader!!!')
-        self.list_ids = glob.glob('../Datasets/WikiArt-Sorted/data/vincent-van-gogh_road-with-cypresses-1890/*')
+        # print('WARNING USING PALCEHOLDER  data in train loader!!!')
+        # self.list_ids = glob.glob('../Datasets/WikiArt-Sorted/data/vincent-van-gogh_road-with-cypresses-1890/*')
 
         if train:
             transf = TRAIN_TRANSFORMS.copy()
