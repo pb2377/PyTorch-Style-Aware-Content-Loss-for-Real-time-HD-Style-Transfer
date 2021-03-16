@@ -14,8 +14,9 @@ artist_list = ['van-gogh', 'cezanne', 'picasso', 'guaguin', 'kandisky', 'monet']
 
 def main():
     train = True
+    resume = True
     input_size = 768
-    artist = 'cezanne'
+    artist = 'van-gogh'
     assert artist in artist_list
     # input_size = 256  # set to none for default cropping
     dual_optim = False
@@ -74,7 +75,7 @@ def main():
 
     if train:
         # load tmp weights
-        if os.path.exists('tmp'):
+        if os.path.exists('tmp') and not resume:
             print('Loading from tmp...')
             assert os.path.exists("tmp/encoder.pt")
             device = 'cuda' if torch.cuda.is_available() else 'cpu'
@@ -89,22 +90,18 @@ def main():
         transf_loss = losses.TransformedLoss()
         style_aware_loss = losses.StyleAwareContentLoss()
 
-        # # optimizer for encoder/decoder (and tblock? - think it has no parameters though)
-        # params_to_update = []
-        # for m in [encoder, decoder, tblock, discrim]:
-        #     for param in m.parameters():
-        #         param.requires_grad = True
-        #         params_to_update.append(param)
-        # # optimizer = torch.optim.Adam(params_to_update, lr=lr)
-        style_data = datasets.StyleDataset(data_dir)
+        if resume:
+            print('Loading from {}...'.format(save_dir))
+            assert os.path.exists(os.path.join(save_dir, 'encoder.pt'))
+            lr *= step_lr_gamma
+            max_its += 150000
+            device = 'cuda' if torch.cuda.is_available() else 'cpu'
+            encoder = torch.load(save_dir + "/encoder.pt", map_location=device)
+            decoder = torch.load(save_dir + "/decoder.pt", map_location=device)
+            tblock = torch.load(save_dir + "/tblock.pt", map_location=device)
+            discrim = torch.load(save_dir + "/discriminator.pt", map_location=device)
+
         num_workers = 8
-        # if mpii:
-        #     dataloaders = {'train': DataLoader(datasets.MpiiDataset(train=True, input_size=input_size,
-        #                                                             style_dataset=style_data, crop_size=crop_size),
-        #                                        batch_size=batch_size, shuffle=True, num_workers=num_workers),
-        #                    'test': DataLoader(datasets.MpiiDataset(train=False, style_dataset=style_data, input_size=input_size),
-        #                                       batch_size=1, shuffle=False, num_workers=num_workers)}
-        # else:
         dataloaders = {'train': DataLoader(datasets.PlacesDataset(train=True, input_size=input_size),
                                            batch_size=batch_size, shuffle=True, num_workers=num_workers),
                        'style': DataLoader(datasets.StyleDataset(data_dir=data_dir, input_size=input_size),
@@ -130,7 +127,7 @@ def main():
         scheduler_g = torch.optim.lr_scheduler.StepLR(g_optimizer, step_lr_step, gamma=step_lr_gamma, last_epoch=-1)
         scheduler_d = torch.optim.lr_scheduler.StepLR(d_optimizer, step_lr_step, gamma=step_lr_gamma, last_epoch=-1)
 
-        its = 0
+        its = 300000 if resume else 0
         print('Begin Training:')
         g_steps = 0
         d_steps = 0
