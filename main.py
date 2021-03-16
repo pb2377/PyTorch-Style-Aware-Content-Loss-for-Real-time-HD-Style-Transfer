@@ -91,7 +91,7 @@ def main():
         style_aware_loss = losses.StyleAwareContentLoss()
 
         if resume:
-            print('Loading from {}...'.format(save_dir))
+            print('Resuming training from {}...'.format(save_dir))
             assert os.path.exists(os.path.join(save_dir, 'encoder.pt'))
             lr *= step_lr_gamma
             max_its += 150000
