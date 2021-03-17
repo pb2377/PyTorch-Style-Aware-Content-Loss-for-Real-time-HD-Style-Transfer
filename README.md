@@ -5,3 +5,6 @@ My pytorch implementation of Style-Aware-Content-Loss-for-Real-time-HD-Style-Tra
 
 Results TBD -- its a big model with big images so takes a long time to run (>24hours on a 2080)....
 Add argparser etc to make more useable...
+
+
+![Screenshot](cezanne.png)
