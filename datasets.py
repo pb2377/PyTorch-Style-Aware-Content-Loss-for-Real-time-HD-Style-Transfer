@@ -90,6 +90,7 @@ class TestDataset(data.Dataset):
                                           # transforms.CenterCrop(input_size),
                                           transforms.ToTensor(),
                                           ])
+        self.scale = 2
 
     def get_list_ids(self):
         list_ids = glob.glob(os.path.join(self.image_dir, '*'))
@@ -101,6 +102,8 @@ class TestDataset(data.Dataset):
 
     def __getitem__(self, idx):
         image = Image.open(self.list_ids[idx]).convert('RGB')
+        if self.scale > 1:
+            image = image.resize((int(self.scale * image.size[0]), int(self.scale * image.size[1])), Image.BILINEAR)
         image = normalize(self.transf(image))
         return image
 

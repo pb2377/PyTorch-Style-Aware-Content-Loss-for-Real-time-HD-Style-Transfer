@@ -13,7 +13,7 @@ artist_list = ['van-gogh', 'cezanne', 'picasso', 'guaguin', 'kandisky', 'monet']
 
 
 def main():
-    train = True
+    train = False
     resume = True
     input_size = 768
     artist = 'van-gogh'
